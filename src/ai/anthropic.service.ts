@@ -3,7 +3,7 @@ import { AiService } from './ai.service';
 
 @Injectable()
 export class AnthropicAiService implements AiService {
-  generateEmbedding(text: string): Promise<number[]> {
+  generateEmbedding(texts: string[]): Promise<number[][]> {
     throw new Error('Method not implemented.');
   }
   summarizeDocument(text: string): Promise<string> {

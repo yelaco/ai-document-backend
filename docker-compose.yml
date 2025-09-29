@@ -1,0 +1,29 @@
+services:
+  app:
+    build: .
+    container_name: ai-document-backend
+    volumes:
+      - .:/app
+      - /app/node_modules # prevents overwriting node_modules
+    ports:
+      - 3000:3000
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15-alpine
+    container_name: postgres-ai-document
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - 5432:5432
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
