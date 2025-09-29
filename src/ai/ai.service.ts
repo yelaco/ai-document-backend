@@ -1,4 +1,4 @@
 export interface AiService {
-  generateEmbedding(text: string): Promise<number[]>;
+  generateEmbedding(texts: string[]): Promise<number[][]>;
   summarizeDocument(text: string): Promise<string>;
 }

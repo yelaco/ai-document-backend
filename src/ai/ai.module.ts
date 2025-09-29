@@ -13,13 +13,16 @@ import { AnthropicAiService } from './anthropic.service';
       provide: AI_SERVICE,
       useFactory: (
         configService: ConfigService,
-        geminiService: GeminiAiService,
+        geminiAiService: GeminiAiService,
+        anthropicAiService: AnthropicAiService,
       ) => {
         const provider = configService.get<string>('AI_PROVIDER');
 
-        if (provider === 'GEMINI') {
-          return geminiService;
+        if (provider === 'anthropic') {
+          return anthropicAiService;
         }
+
+        return geminiAiService;
       },
       inject: [ConfigService, GeminiAiService, AnthropicAiService],
     },

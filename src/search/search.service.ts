@@ -7,8 +7,9 @@ export class SearchService {
   constructor(@Inject(AI_SERVICE) private readonly aiService: AiService) {}
 
   async performSemanticSearch(query: string) {
-    const queryVector = await this.aiService.generateEmbedding(query);
-
-    return { results: `Vector search complete: ${queryVector.toString()}` };
+    const queryVector = await this.aiService.generateEmbedding([query]);
+    if (queryVector) {
+      return { results: `Vector search complete: ${queryVector.toString()}` };
+    }
   }
 }
