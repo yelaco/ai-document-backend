@@ -36,8 +36,10 @@ export class GeminiAiService implements AiService {
       model: 'gemini-2.5-flash',
       contents: question,
       config: {
-        maxOutputTokens: 300,
         candidateCount: 1,
+        thinkingConfig: {
+          thinkingBudget: 0,
+        },
       },
     });
     return from(response).pipe(map((resp) => resp.text || ''));
