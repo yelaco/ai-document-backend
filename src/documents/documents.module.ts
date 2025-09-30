@@ -3,10 +3,11 @@ import { DocumentsService } from './documents.service';
 import { DocumentsController } from './documents.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Document } from './entities/document.entity';
-import { AiModule } from 'src/ai/ai.module';
+import { AiModule } from '../ai/ai.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Document]), AiModule],
+  imports: [TypeOrmModule.forFeature([Document]), AiModule, ConfigModule],
   controllers: [DocumentsController],
   providers: [DocumentsService],
 })

@@ -5,6 +5,12 @@ interface DatabaseConfig {
   pass: string | undefined;
   name: string | undefined;
 }
+
+interface VectorDatabaseConfig {
+  host: string | undefined;
+  port: number;
+}
+
 export function databaseConfig(): DatabaseConfig {
   return {
     host: process.env.DB_HOST,
@@ -15,7 +21,16 @@ export function databaseConfig(): DatabaseConfig {
   };
 }
 
+export function vectorDatabaseConfig(): VectorDatabaseConfig {
+  return {
+    host: process.env.VDB_HOST || 'vector_db',
+    port: process.env.VDB_PORT ? parseInt(process.env.VDB_PORT) : 8000,
+  };
+}
+
 export default () => ({
+  appEnv: process.env.APP_ENV || 'development',
   port: process.env.APP_PORT ? parseInt(process.env.APP_PORT) : 3000,
   database: databaseConfig(),
+  vectorDatabase: vectorDatabaseConfig(),
 });

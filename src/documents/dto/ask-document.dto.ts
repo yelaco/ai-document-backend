@@ -1,7 +1,10 @@
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class CreateDocumentDto {
+export class AskDocumentDto {
+  @IsString()
+  documentId: string;
+
   @IsString()
   @IsNotEmpty()
-  title: string;
+  question: string;
 }

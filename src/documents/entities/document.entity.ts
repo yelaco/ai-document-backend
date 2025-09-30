@@ -1,15 +1,10 @@
-import { Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
+@Entity()
 export class Document {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column()
   title: string;
-
-  @Column('text')
-  content: string;
-
-  @Column('jsonb')
-  vector: number[];
 }

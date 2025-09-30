@@ -2,13 +2,15 @@ services:
   app:
     build: .
     container_name: ai-document-backend
-    volumes:
-      - .:/app
-      - /app/node_modules # prevents overwriting node_modules
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules # prevents overwriting node_modules
     ports:
       - 3000:3000
     depends_on:
       - db
+    networks:
+      - app_net
 
   db:
     image: postgres:15-alpine
@@ -24,6 +26,50 @@ services:
       - 5432:5432
     volumes:
       - db_data:/var/lib/postgresql/data
+    networks:
+      - app_net
+
+  vector_db:
+    image: chromadb/chroma
+    container_name: chromadb-ai-document
+    restart: always
+    environment:
+      - CHROMA_SERVER_CORS_ALLOW_ORIGINS='*'
+      - CHROMA_OPEN_TELEMETRY__ENDPOINT=http://otel-collector:4317/
+      - CHROMA_OPEN_TELEMETRY__SERVICE_NAME=chroma
+    ports:
+      - 8000:8000
+    networks:
+      - app_net
+      - otel_net
+    volumes:
+      - chroma_data:/data
+    depends_on:
+      - otel-collector
+      - zipkin
+
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin-for-chromadb
+    ports:
+      - 9411:9411
+    depends_on: [otel-collector]
+    networks:
+      - otel_net
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    container_name: otel-collector-for-chromadb
+    command: ['--config=/etc/otel-collector-config.yaml']
+    volumes:
+      - ${PWD}/configs/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    networks:
+      - otel_net
+
+networks:
+  app_net:
+  otel_net:
 
 volumes:
   db_data:
+  chroma_data:
