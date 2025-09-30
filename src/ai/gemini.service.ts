@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { GoogleGenAI } from '@google/genai';
 import { ConfigService } from '@nestjs/config';
+import { from, map, Observable } from 'rxjs';
 
 @Injectable()
 export class GeminiAiService implements AiService {
@@ -30,7 +31,15 @@ export class GeminiAiService implements AiService {
       .filter((e) => e != undefined);
   }
 
-  summarizeDocument(text: string): Promise<string> {
-    throw new Error('Method not implemented.');
+  async answer(question: string): Promise<Observable<string>> {
+    const response = await this.ai.models.generateContentStream({
+      model: 'gemini-2.0-flash-001',
+      contents: question,
+      config: {
+        maxOutputTokens: 300,
+        candidateCount: 1,
+      },
+    });
+    return from(response).pipe(map((resp) => resp.text || ''));
   }
 }
