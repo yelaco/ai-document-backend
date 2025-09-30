@@ -33,7 +33,7 @@ export class GeminiAiService implements AiService {
 
   async answer(question: string): Promise<Observable<string>> {
     const response = await this.ai.models.generateContentStream({
-      model: 'gemini-2.0-flash-001',
+      model: 'gemini-2.5-flash',
       contents: question,
       config: {
         maxOutputTokens: 300,
