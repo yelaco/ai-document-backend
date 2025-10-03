@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { CoreModule } from './core/core.module';
 import { DocumentsModule } from './documents/documents.module';
 import { AiModule } from './ai/ai.module';
 import { LoggingInterceptor } from './shared/interceptors/logging.interceptor';
@@ -9,7 +8,7 @@ import { Document } from './documents/entities/document.entity';
 
 @Module({
   imports: [
-    CoreModule,
+    ConfigModule,
     DocumentsModule,
     AiModule,
     TypeOrmModule.forRootAsync({

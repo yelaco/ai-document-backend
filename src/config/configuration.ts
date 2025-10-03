@@ -11,6 +11,12 @@ interface VectorDatabaseConfig {
   port: number;
 }
 
+interface AiConfig {
+  serviceType: string | undefined;
+  geminiApiKey: string | undefined;
+  anthropicApiKey: string | undefined;
+}
+
 export function databaseConfig(): DatabaseConfig {
   return {
     host: process.env.DB_HOST,
@@ -28,9 +34,18 @@ export function vectorDatabaseConfig(): VectorDatabaseConfig {
   };
 }
 
+export function aiConfig(): AiConfig {
+  return {
+    serviceType: process.env.AI_SERVICE_TYPE,
+    geminiApiKey: process.env.GEMINI_API_KEY,
+    anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+  };
+}
+
 export default () => ({
   appEnv: process.env.APP_ENV || 'development',
   port: process.env.APP_PORT ? parseInt(process.env.APP_PORT) : 3000,
   database: databaseConfig(),
   vectorDatabase: vectorDatabaseConfig(),
+  ai: aiConfig(),
 });

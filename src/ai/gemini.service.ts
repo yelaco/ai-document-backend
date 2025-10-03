@@ -10,7 +10,7 @@ export class GeminiAiService implements AiService {
 
   constructor(@Inject() configService: ConfigService) {
     this.ai = new GoogleGenAI({
-      apiKey: configService.get<string>('GEMINI_API_KEY'),
+      apiKey: configService.get<string>('ai.geminiApiKey'),
     });
   }
 
