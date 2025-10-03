@@ -16,9 +16,9 @@ import { AnthropicAiService } from './anthropic.service';
         geminiAiService: GeminiAiService,
         anthropicAiService: AnthropicAiService,
       ) => {
-        const provider = configService.get<string>('AI_PROVIDER');
+        const aiServiceType = configService.get<string>('ai.serviceType');
 
-        if (provider === 'anthropic') {
+        if (aiServiceType === 'anthropic') {
           return anthropicAiService;
         }
 
