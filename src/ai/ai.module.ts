@@ -11,6 +11,7 @@ import { AnthropicAiService } from './anthropic.service';
     AnthropicAiService,
     {
       provide: AI_SERVICE,
+      inject: [ConfigService, GeminiAiService, AnthropicAiService],
       useFactory: (
         configService: ConfigService,
         geminiAiService: GeminiAiService,
@@ -24,7 +25,6 @@ import { AnthropicAiService } from './anthropic.service';
 
         return geminiAiService;
       },
-      inject: [ConfigService, GeminiAiService, AnthropicAiService],
     },
   ],
   exports: [AI_SERVICE],

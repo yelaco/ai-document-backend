@@ -2,9 +2,9 @@ services:
   app:
     build: .
     container_name: ai-document-backend
-    # volumes:
-    #   - .:/app
-    #   - /app/node_modules # prevents overwriting node_modules
+    volumes:
+      - .:/app
+      # - /app/node_modules # prevents overwriting node_modules
     ports:
       - 3000:3000
     depends_on:

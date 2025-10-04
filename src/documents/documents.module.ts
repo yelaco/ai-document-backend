@@ -15,13 +15,13 @@ import { CHROMA_CLIENT } from './documents.constants';
     DocumentsService,
     {
       provide: CHROMA_CLIENT,
+      inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         return new ChromaClient({
           host: configService.get<string>('vectorDatabase.host'),
           port: configService.get<number>('vectorDatabase.port'),
         });
       },
-      inject: [ConfigService],
     },
   ],
 })
