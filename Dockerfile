@@ -22,14 +22,16 @@ COPY --from=install /temp/dev/node_modules node_modules
 COPY . .
 
 # [optional] tests & build
-ENV NODE_ENV=production
 RUN bun run build
 
 # copy production dependencies and source code into final image
 FROM base AS release
+
+ARG APP_ENV=development
+
 COPY --from=install /temp/prod/node_modules node_modules
 COPY --from=prerelease /usr/src/app/package.json .
-COPY --from=prerelease /usr/src/app/.env .
+COPY --from=prerelease /usr/src/app/.env.$APP_ENV ./.env
 COPY --from=prerelease /usr/src/app/dist ./dist
 COPY --from=prerelease /usr/src/app/node_modules node_modules
 

@@ -1,11 +1,14 @@
 services:
   app:
     build:
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_ENV: ${APP_ENV}
     container_name: ai-document-backend
-    volumes:
-      - .:/app
-      - /app/node_modules
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
     ports:
       - 3000:3000
     depends_on:
@@ -17,8 +20,6 @@ services:
     image: postgres:15-alpine
     container_name: postgres-ai-document
     restart: always
-    env_file:
-      - .env
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASS}
