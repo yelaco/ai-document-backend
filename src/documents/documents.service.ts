@@ -8,15 +8,13 @@ import { AI_SERVICE } from '../ai/ai.constants';
 import { type AiService } from '../ai/ai.service';
 import { ChromaClient } from 'chromadb';
 import { CreateDocumentDto } from './dto/create-document.dto';
-import { ConfigService } from '@nestjs/config';
 import { AskDocumentDto } from './dto/ask-document.dto';
 import { endWith, map, Observable } from 'rxjs';
 import { buildPrompt } from '../ai/ai.prompts';
+import { CHROMA_CLIENT } from './documents.constants';
 
 @Injectable()
 export class DocumentsService implements OnModuleInit {
-  private chroma: ChromaClient;
-
   constructor(
     @InjectRepository(Document)
     private documentsRepository: Repository<Document>,
@@ -24,13 +22,9 @@ export class DocumentsService implements OnModuleInit {
     @Inject(AI_SERVICE)
     private readonly aiService: AiService,
 
-    configService: ConfigService,
-  ) {
-    this.chroma = new ChromaClient({
-      host: configService.get<string>('vectorDatabase.host'),
-      port: configService.get<number>('vectorDatabase.port'),
-    });
-  }
+    @Inject(CHROMA_CLIENT)
+    private readonly chroma: ChromaClient,
+  ) {}
 
   async onModuleInit() {
     await this.chroma.heartbeat();
