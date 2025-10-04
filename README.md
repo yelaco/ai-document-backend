@@ -2,6 +2,8 @@
 
 A powerful NestJS-based backend application that enables users to upload PDF documents and interact with them using AI-powered question-answering capabilities. The system leverages Retrieval-Augmented Generation (RAG) to provide accurate, context-aware responses based on document content.
 
+[demo](https://github.com/user-attachments/assets/aa819163-9e7a-4653-90fd-56f2c26b2dc1)
+
 ## 🚀 Features
 
 - **PDF Document Processing**: Upload and parse PDF documents with automatic text extraction
