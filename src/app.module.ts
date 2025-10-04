@@ -8,14 +8,24 @@ import { Document } from './documents/entities/document.entity';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { User } from './users/entities/user.entity';
+import Joi from 'joi';
+import configuration from './configuration';
 
 @Module({
   imports: [
-    ConfigModule,
-    AiModule,
-    DocumentsModule,
-    UsersModule,
-    AuthModule,
+    ConfigModule.forRoot({
+      envFilePath: [`.env`],
+      load: [configuration],
+      cache: true,
+      validationSchema: Joi.object({
+        APP_PORT: Joi.number().port().default(3000),
+        DB_HOST: Joi.string().required(),
+        DB_PORT: Joi.number().port().default(5432),
+        DB_NAME: Joi.string().required(),
+        DB_USER: Joi.string().required(),
+        DB_PASS: Joi.string().optional(),
+      }),
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -31,6 +41,10 @@ import { User } from './users/entities/user.entity';
         entities: [Document, User],
       }),
     }),
+    AiModule,
+    DocumentsModule,
+    UsersModule,
+    AuthModule,
   ],
   providers: [
     {
