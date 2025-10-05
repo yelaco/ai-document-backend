@@ -1,14 +1,33 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
-import { Auth } from './domain/auth.domain';
+import { AuthGuard } from '@nestjs/passport';
+import { CreateUserDto } from '../users/dto/create-user.dto';
+import { toUserDto, UserDto } from '../users/dto/user.dto';
+import { User } from '../users/entities/user.entity';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
+  @UseGuards(AuthGuard('local'))
   @Post('login')
-  login(@Body() loginDto: LoginDto): Promise<Auth> {
-    return this.authService.login(loginDto);
+  @HttpCode(HttpStatus.OK)
+  login(@Request() req) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    return toUserDto(req.user as User);
+  }
+
+  @Post('register')
+  async register(@Body() createUserDto: CreateUserDto): Promise<UserDto> {
+    const user = await this.authService.registerUser(createUserDto);
+    return toUserDto(user);
   }
 }

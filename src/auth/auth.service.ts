@@ -1,10 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { LoginDto } from './dto/login.dto';
-import { JwtService } from '@nestjs/jwt';
-import { Auth } from './domain/auth.domain';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CreateUserDto } from '../users/dto/create-user.dto';
+import { ARGON2_OPTIONS } from './auth.constants';
+import * as argon2 from 'argon2';
 
 @Injectable()
 export class AuthService {
@@ -12,19 +17,51 @@ export class AuthService {
     @InjectRepository(User)
     private userRepository: Repository<User>,
 
-    private jwtService: JwtService,
+    @Inject(ARGON2_OPTIONS)
+    private options: argon2.Options,
   ) {}
 
-  async login(loginDto: LoginDto): Promise<Auth> {
-    const user = await this.userRepository.findOne({
-      where: { username: loginDto.username },
+  async registerUser(createUserDto: CreateUserDto): Promise<User> {
+    const existingUser = await this.userRepository.findOne({
+      where: { email: createUserDto.email },
     });
-    if (!user) {
-      throw new Error('Invalid credentials');
+    if (existingUser) {
+      throw new ConflictException('User already exists.');
     }
-    const payload = { sub: user.id, username: user.username };
-    return {
-      accessToken: await this.jwtService.signAsync(payload),
-    };
+    const newUser = this.userRepository.create();
+    newUser.email = createUserDto.email;
+    newUser.fullName = createUserDto.fullName;
+    newUser.passwordHash = await this.hashPassword(createUserDto.password);
+    return await this.userRepository.save(newUser);
+  }
+
+  async validateUser(email: string, password: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (user && (await this.verifyPassword(user.passwordHash, password))) {
+      return user;
+    }
+    return null;
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    try {
+      // The salt is generated automatically by the library
+      const hash = await argon2.hash(password, this.options);
+      return hash;
+    } catch {
+      throw new InternalServerErrorException('Password hashing failed.');
+    }
+  }
+
+  private async verifyPassword(
+    storedHash: string,
+    passwordAttempt: string,
+  ): Promise<boolean> {
+    try {
+      const isMatch = await argon2.verify(storedHash, passwordAttempt);
+      return isMatch;
+    } catch {
+      return false;
+    }
   }
 }

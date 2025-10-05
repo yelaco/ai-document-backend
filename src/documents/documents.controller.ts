@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { DocumentsService } from './documents.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { DocumentDto, toDocumentDto } from './dto/document.dto';
 
 @Controller('documents')
 export class DocumentsController {
@@ -15,12 +16,14 @@ export class DocumentsController {
 
   @Post()
   @UseInterceptors(FileInterceptor('file'))
-  async upload(@UploadedFile() file: Express.Multer.File) {
+  async upload(
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<DocumentDto> {
     const document = await this.documentService.create({
       title: file.originalname,
     });
     await this.documentService.process(file, document.id);
-    return document;
+    return toDocumentDto(document);
   }
 
   @Sse('ask')
