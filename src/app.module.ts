@@ -9,13 +9,13 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { User } from './users/entities/user.entity';
 import Joi from 'joi';
-import configuration from './configuration';
+import envConfig from './config/env.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       envFilePath: [`.env`],
-      load: [configuration],
+      load: [envConfig],
       cache: true,
       validationSchema: Joi.object({
         APP_PORT: Joi.number().port().default(3000),

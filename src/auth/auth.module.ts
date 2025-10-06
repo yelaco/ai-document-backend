@@ -7,14 +7,34 @@ import { argon2id } from 'argon2';
 import { PassportModule } from '@nestjs/passport';
 import { LocalStrategy } from './local.strategy';
 import { UsersModule } from '../users/users.module';
+import { SecretManagerModule } from 'src/secret-manager/secret-manager.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SECRET_MANAGER_SERVICE } from 'src/secret-manager/secret-manager.constants';
+import { SecretManagerService } from 'src/secret-manager/secret-manager.service';
 
 @Module({
   imports: [
     UsersModule,
-    JwtModule.register({
-      global: true,
-      secret: 'ai-document', // TODO: use secret vault
-      signOptions: { expiresIn: ACCESS_TOKEN_EXPIRES_IN },
+    JwtModule.registerAsync({
+      imports: [ConfigModule, SecretManagerModule],
+      inject: [ConfigService, SECRET_MANAGER_SERVICE],
+      useFactory: async (
+        configService: ConfigService,
+        secretManagerService: SecretManagerService,
+      ) => {
+        let jwtSecret = 'ai-document-secret';
+        if (configService.get<string>('appEnv') === 'production') {
+          const appSecrets = await secretManagerService.getAppSecrets();
+          jwtSecret = appSecrets.JWT_SECRET;
+        }
+        return {
+          global: true,
+          secret: jwtSecret,
+          signOptions: {
+            expiresIn: ACCESS_TOKEN_EXPIRES_IN,
+          },
+        };
+      },
     }),
     PassportModule,
   ],

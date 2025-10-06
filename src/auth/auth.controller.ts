@@ -25,6 +25,12 @@ export class AuthController {
     return toUserDto(req.user as User);
   }
 
+  @Post('logout')
+  logout(@Request() req) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    return req.logout();
+  }
+
   @Post('register')
   async register(@Body() createUserDto: CreateUserDto): Promise<UserDto> {
     const user = await this.authService.registerUser(createUserDto);
