@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { GcpSecretManagerService } from './gcp.service';
 import { SECRET_MANAGER_SERVICE } from './secret-manager.constants';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AwsSecretManagerService } from './aws.service';
 
 @Module({
+  imports: [ConfigModule],
   providers: [
     GcpSecretManagerService,
     AwsSecretManagerService,
@@ -23,10 +24,10 @@ import { AwsSecretManagerService } from './aws.service';
         if (secretManagerServiceType === 'aws') {
           return awsSecretManagerService;
         }
-
         return gcpSecretManagerService;
       },
     },
   ],
+  exports: [SECRET_MANAGER_SERVICE],
 })
 export class SecretManagerModule {}

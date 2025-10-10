@@ -4,8 +4,8 @@ import { AI_SERVICE } from '../ai/ai.constants';
 import { mockAiService } from '../ai/ai.service.spec';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Document } from './entities/document.entity';
-import { EmbeddingService } from 'src/embedding/embedding.service';
-import { mockEmbeddingService } from 'src/embedding/embedding.service.spec';
+import { EmbeddingService } from '../embedding/embedding.service';
+import { mockEmbeddingService } from '../embedding/embedding.service.spec';
 
 const mockDocumentRepository = {
   save: jest.fn(),

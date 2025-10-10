@@ -7,14 +7,16 @@ import { argon2id } from 'argon2';
 import { PassportModule } from '@nestjs/passport';
 import { LocalStrategy } from './local.strategy';
 import { UsersModule } from '../users/users.module';
-import { SecretManagerModule } from 'src/secret-manager/secret-manager.module';
+import { SecretManagerModule } from '../secret-manager/secret-manager.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { SECRET_MANAGER_SERVICE } from 'src/secret-manager/secret-manager.constants';
-import { SecretManagerService } from 'src/secret-manager/secret-manager.service';
+import { SECRET_MANAGER_SERVICE } from '../secret-manager/secret-manager.constants';
+import { SecretManagerService } from '../secret-manager/secret-manager.service';
 
 @Module({
   imports: [
     UsersModule,
+    ConfigModule,
+    SecretManagerModule,
     JwtModule.registerAsync({
       imports: [ConfigModule, SecretManagerModule],
       inject: [ConfigService, SECRET_MANAGER_SERVICE],

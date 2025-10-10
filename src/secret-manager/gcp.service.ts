@@ -13,7 +13,7 @@ export class GcpSecretManagerService implements SecretManagerService {
 
   constructor(configService: ConfigService) {
     this.client = new SecretManagerServiceClient();
-    this.projectId = configService.getOrThrow<string>('gcp.projectId');
+    // this.projectId = configService.getOrThrow<string>('gcp.projectId');
   }
 
   async getAppSecrets(): Promise<AppSecrets> {
