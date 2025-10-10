@@ -1,1 +1,0 @@
-export const CHROMA_CLIENT = 'CHROMA_CLIENT';

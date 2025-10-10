@@ -22,7 +22,7 @@ export class DocumentsController {
     const document = await this.documentService.create({
       title: file.originalname,
     });
-    await this.documentService.process(file, document.id);
+    await this.documentService.process(file, document);
     return toDocumentDto(document);
   }
 

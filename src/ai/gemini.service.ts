@@ -1,35 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AiService } from './ai.service';
 import { GoogleGenAI } from '@google/genai';
-import { ConfigService } from '@nestjs/config';
 import { from, map, Observable } from 'rxjs';
+import { GEMINI_AI } from './ai.constants';
 
 @Injectable()
 export class GeminiAiService implements AiService {
-  private ai: GoogleGenAI;
-
-  constructor(@Inject() configService: ConfigService) {
-    this.ai = new GoogleGenAI({
-      apiKey: configService.get<string>('ai.geminiApiKey'),
-    });
-  }
-
-  async generateEmbedding(texts: string[]): Promise<number[][]> {
-    const response = await this.ai.models.embedContent({
-      model: 'gemini-embedding-001',
-      contents: texts,
-      config: {
-        taskType: 'RETRIEVAL_DOCUMENT',
-      },
-    });
-    if (!response.embeddings) {
-      return Array<number[]>(texts.length).fill([]);
-    }
-
-    return response.embeddings
-      .map((e) => e.values)
-      .filter((e) => e != undefined);
-  }
+  constructor(
+    @Inject(GEMINI_AI)
+    private readonly ai: GoogleGenAI,
+  ) {}
 
   async answer(question: string): Promise<Observable<string>> {
     const response = await this.ai.models.generateContentStream({

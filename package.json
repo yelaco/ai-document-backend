@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@chroma-core/default-embed": "^0.1.8",
+    "@chroma-core/google-gemini": "^0.1.7",
     "@google-cloud/secret-manager": "^6.1.0",
     "@google/genai": "^1.21.0",
     "@langchain/textsplitters": "^0.1.0",

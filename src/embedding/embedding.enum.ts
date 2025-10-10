@@ -1,0 +1,4 @@
+export enum EmbeddingTaskType {
+  RETRIEVAL_DOCUMENT = 'RETRIEVAL_DOCUMENT',
+  RETRIEVAL_QUERY = 'RETRIEVAL_QUERY',
+}

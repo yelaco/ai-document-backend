@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { GeminiAiService } from './gemini.service';
-import { AI_SERVICE } from './ai.constants';
+import { AI_SERVICE, GEMINI_AI } from './ai.constants';
 import { AnthropicAiService } from './anthropic.service';
+import { GoogleGenAI } from '@google/genai';
 
 @Module({
   imports: [ConfigModule],
@@ -24,6 +25,15 @@ import { AnthropicAiService } from './anthropic.service';
         }
 
         return geminiAiService;
+      },
+    },
+    {
+      provide: GEMINI_AI,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        return new GoogleGenAI({
+          apiKey: configService.get<string>('ai.geminiApiKey'),
+        });
       },
     },
   ],

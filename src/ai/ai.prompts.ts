@@ -8,7 +8,7 @@ You must adhere strictly to the following rules:
 4. Format your answer clearly and concisely in Markdown.
 `.trim();
 
-export function buildPrompt(userQuestion: string, context: string[]): string {
+export function buildPrompt(query: string, context: string[]): string {
   return `
   ${systemInstruction}
 
@@ -16,6 +16,6 @@ export function buildPrompt(userQuestion: string, context: string[]): string {
   ${context.join('\n---\n')}
 
   [USER QUERY]
-  ${userQuestion}
+  ${query}
   `.trim();
 }

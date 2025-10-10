@@ -8,6 +8,7 @@ import { Document } from './documents/entities/document.entity';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { User } from './users/entities/user.entity';
+import { EmbeddingModule } from './embedding/embedding.module';
 import Joi from 'joi';
 import envConfig from './config/env.config';
 
@@ -45,6 +46,7 @@ import envConfig from './config/env.config';
     DocumentsModule,
     UsersModule,
     AuthModule,
+    EmbeddingModule,
   ],
   providers: [
     {

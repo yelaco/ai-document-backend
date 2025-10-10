@@ -4,27 +4,13 @@ import { AI_SERVICE } from '../ai/ai.constants';
 import { mockAiService } from '../ai/ai.service.spec';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Document } from './entities/document.entity';
-import { CHROMA_CLIENT } from './documents.constants';
+import { EmbeddingService } from 'src/embedding/embedding.service';
+import { mockEmbeddingService } from 'src/embedding/embedding.service.spec';
 
 const mockDocumentRepository = {
   save: jest.fn(),
   findOne: jest.fn(),
   find: jest.fn(),
-};
-
-export const mockCollection = {
-  add: jest.fn().mockResolvedValue(true),
-  query: jest.fn().mockResolvedValue({
-    ids: [['doc1']],
-    documents: [['The mocked document result']],
-  }),
-};
-
-export const mockChromaClient = {
-  constructor: jest.fn(),
-  getOrCreateCollection: jest.fn().mockResolvedValue(mockCollection),
-  getCollection: jest.fn().mockResolvedValue(mockCollection),
-  heartbeat: jest.fn().mockResolvedValue(1),
 };
 
 describe('DocumentsService', () => {
@@ -43,8 +29,8 @@ describe('DocumentsService', () => {
           useValue: mockAiService,
         },
         {
-          provide: CHROMA_CLIENT,
-          useValue: mockChromaClient,
+          provide: EmbeddingService,
+          useValue: mockEmbeddingService,
         },
       ],
     }).compile();
