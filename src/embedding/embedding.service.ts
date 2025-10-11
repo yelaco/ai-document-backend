@@ -26,7 +26,7 @@ export class EmbeddingService implements OnModuleInit {
     await this.chroma.heartbeat();
   }
 
-  async embedDocument(text: string) {
+  async embedDocument(documentId: string, text: string) {
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: 500,
       chunkOverlap: 100,
@@ -44,6 +44,7 @@ export class EmbeddingService implements OnModuleInit {
         ids: chunks.map((_, idx) => `doc_chunk_${Date.now()}_${idx}`),
         documents: chunks,
         metadatas: chunks.map(() => ({
+          documentId: documentId,
           created: new Date().toISOString(),
         })),
       });
@@ -54,7 +55,7 @@ export class EmbeddingService implements OnModuleInit {
     }
   }
 
-  async vectorSearchDocument(query: string, topK = 10) {
+  async vectorSearchDocument(documentId: string, query: string, topK = 10) {
     try {
       const collection = await this.chroma.getCollection({
         name: 'documents',
@@ -64,6 +65,7 @@ export class EmbeddingService implements OnModuleInit {
         queryTexts: [query],
         nResults: topK,
         include: ['documents'],
+        where: { documentId: documentId },
       });
       const retrievedChunks = result.documents[0].filter((doc) => doc !== null);
       return retrievedChunks;

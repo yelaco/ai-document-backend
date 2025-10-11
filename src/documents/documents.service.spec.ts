@@ -6,6 +6,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Document } from './entities/document.entity';
 import { EmbeddingService } from '../embedding/embedding.service';
 import { mockEmbeddingService } from '../embedding/embedding.service.spec';
+import { RequestContext } from '../shared/interceptors/request-context.interceptor';
 
 const mockDocumentRepository = {
   save: jest.fn(),
@@ -15,6 +16,10 @@ const mockDocumentRepository = {
 
 describe('DocumentsService', () => {
   let service: DocumentsService;
+
+  const ctx = {
+    userId: 'fd200dc2-09a4-4f0e-9553-f5a73e7b04f8',
+  } as RequestContext;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -44,10 +49,7 @@ describe('DocumentsService', () => {
 
   describe('ask', () => {
     it('should return an observable', async () => {
-      const result = await service.ask({
-        documentId: '1',
-        question: 'What is NestJS',
-      });
+      const result = await service.ask(ctx, '1', 'What is NestJS');
       const possibleStatuses = ['in-progress', 'completed'];
 
       result.subscribe((event) => {

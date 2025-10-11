@@ -24,4 +24,7 @@ export class Document {
 
   @Column({ name: 'user_id' })
   userId: string;
+
+  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  createdAt: Date;
 }

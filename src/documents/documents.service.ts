@@ -3,6 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
   MessageEvent,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Document } from './entities/document.entity';
@@ -11,11 +12,10 @@ import pdf from 'pdf-parse';
 import { AI_SERVICE } from '../ai/ai.constants';
 import { type AiService } from '../ai/ai.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
-import { AskDocumentDto } from './dto/ask-document.dto';
 import { endWith, map, Observable } from 'rxjs';
 import { buildPrompt } from '../ai/ai.prompts';
 import { EmbeddingService } from '../embedding/embedding.service';
-import { RequestContext } from 'src/shared/interceptors/request-context.interceptor';
+import { RequestContext } from '../shared/interceptors/request-context.interceptor';
 
 @Injectable()
 export class DocumentsService {
@@ -36,7 +36,7 @@ export class DocumentsService {
       // Extract text from PDF
       const data = await pdf(file.buffer);
 
-      await this.embeddingService.embedDocument(data.text);
+      await this.embeddingService.embedDocument(document.id, data.text);
     } catch (error) {
       throw new InternalServerErrorException(
         'Failed to process document: ' + (error as Error).message,
@@ -44,13 +44,18 @@ export class DocumentsService {
     }
   }
 
-  async ask(askDocumentDto: AskDocumentDto): Promise<Observable<MessageEvent>> {
+  async ask(
+    ctx: RequestContext,
+    documentId: string,
+    question: string,
+  ): Promise<Observable<MessageEvent>> {
     const questionContext = await this.embeddingService.vectorSearchDocument(
-      askDocumentDto.question,
+      documentId,
+      question,
     );
 
     const observableAnswer = await this.aiService.answer(
-      buildPrompt(askDocumentDto.question, questionContext),
+      buildPrompt(question, questionContext),
     );
 
     return observableAnswer.pipe(
@@ -81,5 +86,32 @@ export class DocumentsService {
     });
 
     return await this.documentsRepository.save(document);
+  }
+
+  async findPaginated(
+    ctx: RequestContext,
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: Document[]; total: number }> {
+    const [data, total] = await this.documentsRepository.findAndCount({
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      order: { createdAt: 'DESC' },
+    });
+    return { data, total };
+  }
+
+  async findOne(ctx: RequestContext, id: string): Promise<Document | null> {
+    if (!ctx.userId) {
+      throw new UnauthorizedException();
+    }
+
+    return this.documentsRepository.findOne({
+      where: { id: id, userId: ctx.userId },
+    });
+  }
+
+  async remove(ctx: RequestContext, id: string): Promise<void> {
+    await this.documentsRepository.delete(id);
   }
 }
