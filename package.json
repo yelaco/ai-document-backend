@@ -9,7 +9,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "nest start --watch",
+    "start:dev": "bun --hot src/main.ts",
     "start:debug": "nest start --debug --watch",
     "start:prod": "bun dist/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
@@ -18,11 +18,11 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "compose:dev": "cross-env APP_ENV=development docker-compose --env-file .env.development up --build",
-    "compose:prod": "cross-env APP_ENV=production docker-compose --env-file .env.production up --build -d",
+    "compose:dev": "cross-env APP_ENV=development docker-compose -f infra/development/docker-compose.dev.yml --env-file .env.development up --build",
+    "compose:prod": "cross-env APP_ENV=production docker-compose -f infra/production/docker-compose.prod.yml --env-file .env.production up --build -d",
     "compose:down": "docker-compose down",
-    "compose:down:dev": "cross-env APP_ENV=development docker-compose --env-file .env.development down",
-    "compose:down:prod": "cross-env APP_ENV=production docker-compose --env-file .env.production down"
+    "compose:down:dev": "cross-env APP_ENV=development docker-compose -f infra/development/docker-compose.dev.yml --env-file .env.development down",
+    "compose:down:prod": "cross-env APP_ENV=production docker-compose -f infra/development/docker-compose.prod.yml --env-file .env.production down"
   },
   "dependencies": {
     "@chroma-core/default-embed": "^0.1.8",
@@ -33,7 +33,7 @@
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
-    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/jwt": "^11.0.1",
     "@nestjs/mapped-types": "*",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",

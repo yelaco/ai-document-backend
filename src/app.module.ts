@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DocumentsModule } from './documents/documents.module';
 import { AiModule } from './ai/ai.module';
-import { LoggingInterceptor } from './shared/interceptors/logging.interceptor';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Document } from './documents/entities/document.entity';
@@ -47,12 +46,6 @@ import envConfig from './config/env.config';
     UsersModule,
     AuthModule,
     EmbeddingModule,
-  ],
-  providers: [
-    {
-      provide: 'APP_INTERCEPTOR',
-      useClass: LoggingInterceptor,
-    },
   ],
 })
 export class AppModule {}

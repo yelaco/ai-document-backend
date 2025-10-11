@@ -5,33 +5,23 @@ import { JwtModule } from '@nestjs/jwt';
 import { ACCESS_TOKEN_EXPIRES_IN, ARGON2_OPTIONS } from './auth.constants';
 import { argon2id } from 'argon2';
 import { PassportModule } from '@nestjs/passport';
-import { LocalStrategy } from './local.strategy';
+import { LocalStrategy } from './strategy/local.strategy';
 import { UsersModule } from '../users/users.module';
 import { SecretManagerModule } from '../secret-manager/secret-manager.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { SECRET_MANAGER_SERVICE } from '../secret-manager/secret-manager.constants';
 import { SecretManagerService } from '../secret-manager/secret-manager.service';
+import { JwtStrategy } from './strategy/jwt.strategy';
 
 @Module({
   imports: [
     UsersModule,
-    ConfigModule,
     SecretManagerModule,
     JwtModule.registerAsync({
-      imports: [ConfigModule, SecretManagerModule],
-      inject: [ConfigService, SECRET_MANAGER_SERVICE],
-      useFactory: async (
-        configService: ConfigService,
-        secretManagerService: SecretManagerService,
-      ) => {
-        let jwtSecret = 'ai-document-secret';
-        if (configService.get<string>('appEnv') === 'production') {
-          const appSecrets = await secretManagerService.getAppSecrets();
-          jwtSecret = appSecrets.JWT_SECRET;
-        }
+      imports: [SecretManagerModule],
+      inject: [SecretManagerService],
+      useFactory: (secretManagerService: SecretManagerService) => {
         return {
           global: true,
-          secret: jwtSecret,
+          secret: secretManagerService.getAppSecrets().jwtSecret,
           signOptions: {
             expiresIn: ACCESS_TOKEN_EXPIRES_IN,
           },
@@ -44,6 +34,7 @@ import { SecretManagerService } from '../secret-manager/secret-manager.service';
   providers: [
     AuthService,
     LocalStrategy,
+    JwtStrategy,
     {
       provide: ARGON2_OPTIONS,
       useValue: {

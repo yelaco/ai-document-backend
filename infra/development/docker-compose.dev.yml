@@ -1,14 +1,12 @@
 services:
   app:
     build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        APP_ENV: ${APP_ENV}
-    container_name: ai-document-backend
-    # volumes:
-    #   - .:/app
-    #   - /app/node_modules
+      context: ../../
+      dockerfile: infra/development/Dockerfile.development
+    container_name: ai-document-backend-dev
+    volumes:
+      - ../../:/usr/src/app
+      - /usr/src/app/node_modules
     ports:
       - 3000:3000
     depends_on:
@@ -18,7 +16,7 @@ services:
 
   db:
     image: postgres:15-alpine
-    container_name: postgres-ai-document
+    container_name: postgres-ai-document-dev
     restart: always
     environment:
       - POSTGRES_USER=${DB_USER}
@@ -33,7 +31,7 @@ services:
 
   vector_db:
     image: chromadb/chroma
-    container_name: chromadb-ai-document
+    container_name: chromadb-ai-document-dev
     restart: always
     environment:
       - CHROMA_SERVER_CORS_ALLOW_ORIGINS='*'
@@ -52,7 +50,7 @@ services:
 
   zipkin:
     image: openzipkin/zipkin
-    container_name: zipkin-for-chromadb
+    container_name: zipkin-for-chromadb-ai-document-dev
     ports:
       - 9411:9411
     depends_on: [otel-collector]
@@ -61,7 +59,7 @@ services:
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.111.0
-    container_name: otel-collector-for-chromadb
+    container_name: otel-collector-for-chromadb-ai-document-dev
     command: ['--config=/etc/otel-collector-config.yaml']
     volumes:
       - ${PWD}/config/otel-collector-config.yaml:/etc/otel-collector-config.yaml

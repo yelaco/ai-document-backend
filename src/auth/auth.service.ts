@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { ARGON2_OPTIONS } from './auth.constants';
 import * as argon2 from 'argon2';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,8 @@ export class AuthService {
 
     @Inject(ARGON2_OPTIONS)
     private options: argon2.Options,
+
+    private jwtService: JwtService,
   ) {}
 
   async registerUser(createUserDto: CreateUserDto): Promise<User> {
@@ -33,6 +36,13 @@ export class AuthService {
     newUser.fullName = createUserDto.fullName;
     newUser.passwordHash = await this.hashPassword(createUserDto.password);
     return await this.userRepository.save(newUser);
+  }
+
+  async login(user: any) {
+    const payload = { username: user.email, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {

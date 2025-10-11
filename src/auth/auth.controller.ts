@@ -8,21 +8,20 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthGuard } from '@nestjs/passport';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { toUserDto, UserDto } from '../users/dto/user.dto';
-import { User } from '../users/entities/user.entity';
+import { LocalAuthGuard } from './guard/local-auth.guard';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @UseGuards(AuthGuard('local'))
+  @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
   login(@Request() req) {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    return toUserDto(req.user as User);
+    return this.authService.login(req.user);
   }
 
   @Post('logout')

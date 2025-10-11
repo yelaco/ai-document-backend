@@ -15,6 +15,7 @@ import { AskDocumentDto } from './dto/ask-document.dto';
 import { endWith, map, Observable } from 'rxjs';
 import { buildPrompt } from '../ai/ai.prompts';
 import { EmbeddingService } from '../embedding/embedding.service';
+import { RequestContext } from 'src/shared/interceptors/request-context.interceptor';
 
 @Injectable()
 export class DocumentsService {
@@ -26,7 +27,11 @@ export class DocumentsService {
     private readonly aiService: AiService,
   ) {}
 
-  async process(file: Express.Multer.File, document: Document): Promise<void> {
+  async process(
+    ctx: RequestContext,
+    document: Document,
+    file: Express.Multer.File,
+  ): Promise<void> {
     try {
       // Extract text from PDF
       const data = await pdf(file.buffer);
@@ -66,9 +71,14 @@ export class DocumentsService {
     );
   }
 
-  async create(createDocumentDto: CreateDocumentDto): Promise<Document> {
-    const document = new Document();
-    document.title = createDocumentDto.title;
+  async create(
+    ctx: RequestContext,
+    createDocumentDto: CreateDocumentDto,
+  ): Promise<Document> {
+    const document = this.documentsRepository.create({
+      title: createDocumentDto.title,
+      userId: ctx.userId,
+    });
 
     return await this.documentsRepository.save(document);
   }
