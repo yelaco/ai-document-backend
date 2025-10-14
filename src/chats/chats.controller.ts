@@ -24,12 +24,26 @@ import { toChatDto } from './dto/chat.dto';
 import { map, Observable } from 'rxjs';
 import { AskDocumentDto } from '../chats/dto/ask-document.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
+import { ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 
 @UseGuards(JwtAuthGuard)
 @Controller('chats')
 export class ChatsController {
   constructor(private readonly chatsService: ChatsService) {}
 
+  @ApiOperation({
+    summary: 'Ask document',
+    description: 'Ask a question about a document.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Answer streamed as SSE',
+    schema: {
+      example: {
+        data: { status: 'completed', text: 'Document answer here...' },
+      },
+    },
+  })
   @Sse('ask')
   async ask(
     @Context() ctx: RequestContext,
@@ -51,11 +65,37 @@ export class ChatsController {
     );
   }
 
+  @ApiOperation({ summary: 'Create chat', description: 'Create a new chat.' })
+  @ApiBody({
+    type: CreateChatDto,
+    examples: {
+      default: { value: { title: 'Chat about doc', documentId: 'doc123' } },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Chat created.',
+    schema: { example: { id: 'chat1', title: 'Chat about doc' } },
+  })
   @Post()
   create(@Context() ctx: RequestContext, @Body() createChatDto: CreateChatDto) {
     return this.chatsService.create(ctx, createChatDto);
   }
 
+  @ApiOperation({
+    summary: 'List chats',
+    description: 'Get a paginated list of chats.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated chat list.',
+    schema: {
+      example: {
+        items: [{ id: 'chat1', title: 'First chat' }],
+        meta: { total: 1, page: 1, pageSize: 10 },
+      },
+    },
+  })
   @Get()
   async findPaginated(
     @Context() ctx: RequestContext,
@@ -76,6 +116,15 @@ export class ChatsController {
     };
   }
 
+  @ApiOperation({
+    summary: 'Get chat by id',
+    description: 'Retrieve a single chat by its ID.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Single chat details.',
+    schema: { example: { id: 'chat1', title: 'Chat title' } },
+  })
   @Get(':id')
   async findOne(@Context() ctx: RequestContext, @Param('id') id: string) {
     const chat = await this.chatsService.findOne(ctx, id);
@@ -85,6 +134,19 @@ export class ChatsController {
     return toChatDto(chat);
   }
 
+  @ApiOperation({
+    summary: 'Update chat',
+    description: 'Update the chat title.',
+  })
+  @ApiBody({
+    type: UpdateChatDto,
+    examples: { default: { value: { title: 'Updated chat title' } } },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Updated chat.',
+    schema: { example: { id: 'chat1', title: 'Updated chat title' } },
+  })
   @Patch(':id')
   async update(
     @Context() ctx: RequestContext,
@@ -94,6 +156,15 @@ export class ChatsController {
     return this.chatsService.update(ctx, id, updateChatDto);
   }
 
+  @ApiOperation({
+    summary: 'Delete chat',
+    description: 'Delete a chat by its ID.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Chat deleted.',
+    schema: { example: { success: true } },
+  })
   @Delete(':id')
   remove(@Context() ctx: RequestContext, @Param('id') id: string) {
     return this.chatsService.remove(ctx, id);

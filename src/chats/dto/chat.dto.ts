@@ -1,10 +1,14 @@
 import { Expose, instanceToPlain, plainToInstance } from 'class-transformer';
 import { Chat } from '../entities/chat.entity';
 
+import { ApiProperty } from '@nestjs/swagger';
+
 export class ChatDto {
+  @ApiProperty({ example: 'chat1' })
   @Expose()
   id: string;
 
+  @ApiProperty({ example: 'Project Chat' })
   @Expose()
   title: string;
 }

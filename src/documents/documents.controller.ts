@@ -20,12 +20,24 @@ import {
 } from '../shared/interceptors/request-context.interceptor';
 import { ListDocumentDto } from './dto/list-document.dto';
 import { PaginationResponseDto } from '../shared/dto/pagination-response.dto';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
+@ApiTags('documents')
 @Controller('documents')
 export class DocumentsController {
   constructor(private readonly documentService: DocumentsService) {}
 
+  @ApiOperation({
+    summary: 'Upload document',
+    description: 'Upload a new document via file.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Document uploaded.',
+    schema: { example: { id: 'doc123', title: 'Uploaded file.pdf' } },
+  })
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   async upload(
@@ -39,6 +51,20 @@ export class DocumentsController {
     return toDocumentDto(document);
   }
 
+  @ApiOperation({
+    summary: 'List documents',
+    description: 'Get a paginated list of documents.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated document list.',
+    schema: {
+      example: {
+        items: [{ id: 'doc123', title: 'First document' }],
+        meta: { total: 1, page: 1, pageSize: 10 },
+      },
+    },
+  })
   @Get()
   async findPaginated(
     @Context() ctx: RequestContext,
@@ -59,6 +85,15 @@ export class DocumentsController {
     };
   }
 
+  @ApiOperation({
+    summary: 'Get document by id',
+    description: 'Retrieve a single document by its ID.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Single document details.',
+    schema: { example: { id: 'doc123', title: 'Document title' } },
+  })
   @Get(':id')
   async findOne(
     @Context() ctx: RequestContext,
