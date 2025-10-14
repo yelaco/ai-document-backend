@@ -2,7 +2,8 @@ import { IsNotEmpty, IsString } from 'class-validator';
 
 export class AskDocumentDto {
   @IsString()
-  documentId: string;
+  @IsNotEmpty()
+  chatId: string;
 
   @IsString()
   @IsNotEmpty()

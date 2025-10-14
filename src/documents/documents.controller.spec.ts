@@ -2,10 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { DocumentsController } from './documents.controller';
 import { DocumentsService } from './documents.service';
 
-const mockDocumentsService = {};
-
 describe('DocumentsController', () => {
   let controller: DocumentsController;
+
+  const mockDocumentsService = {};
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

@@ -13,11 +13,14 @@ export class Chat {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
-  title: string;
+  @Column({ nullable: true })
+  title?: string;
 
   @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
+
+  @Column({ type: 'timestamptz' })
+  updatedAt: Date;
 
   @ManyToOne(() => Document, (document) => document.chats, {
     cascade: true,

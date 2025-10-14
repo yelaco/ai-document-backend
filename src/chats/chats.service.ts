@@ -1,24 +1,73 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { UpdateChatDto } from './dto/update-chat.dto';
 import { Repository } from 'typeorm';
 import { Chat } from './entities/chat.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RequestContext } from '../shared/interceptors/request-context.interceptor';
+import { endWith, map, Observable } from 'rxjs';
+import { AI_SERVICE } from '../ai/ai.constants';
+import { buildPrompt } from '../ai/ai.prompts';
+import { type AiService } from '../ai/ai.service';
+import { AnswerDocumentDto } from '../chats/dto/ask-document.dto';
+import { EmbeddingService } from '../embedding/embedding.service';
 
 @Injectable()
 export class ChatsService {
   constructor(
     @InjectRepository(Chat)
     private chatRepo: Repository<Chat>,
+    private readonly embeddingService: EmbeddingService,
+    @Inject(AI_SERVICE)
+    private readonly aiService: AiService,
   ) {}
 
-  async create(createChatDto: CreateChatDto) {
+  async ask(
+    ctx: RequestContext,
+    chatId: string,
+    question: string,
+  ): Promise<Observable<AnswerDocumentDto>> {
+    const chat = await this.findOne(ctx, chatId);
+    if (!chat) {
+      throw new NotFoundException('Chat not found');
+    }
+    const questionContext = await this.embeddingService.vectorSearchDocument(
+      chat.documentId,
+      question,
+    );
+
+    const observableAnswer = await this.aiService.answer(
+      buildPrompt(question, questionContext),
+    );
+
+    return observableAnswer.pipe(
+      map(
+        (text) =>
+          ({
+            text: text,
+            status: 'in-progress',
+          }) as AnswerDocumentDto,
+      ),
+      endWith({
+        status: 'completed',
+      } as AnswerDocumentDto),
+    );
+  }
+
+  async create(ctx: RequestContext, createChatDto: CreateChatDto) {
+    if (!ctx.userId) {
+      throw new UnauthorizedException();
+    }
     const chat = this.chatRepo.create({
       title: createChatDto.title,
       documentId: createChatDto.documentId,
+      userId: ctx.userId,
     });
-
     return this.chatRepo.save(chat);
   }
 
@@ -35,8 +84,13 @@ export class ChatsService {
     return { data, total };
   }
 
-  update(id: number, updateChatDto: UpdateChatDto) {
-    return `This action updates a #${id} chat`;
+  async update(ctx: RequestContext, id: string, updateChatDto: UpdateChatDto) {
+    const chat = await this.findOne(ctx, id);
+    if (!chat) {
+      throw new NotFoundException('Chat not found');
+    }
+    chat.title = updateChatDto.title ?? chat.title;
+    return this.chatRepo.save(chat);
   }
 
   async findOne(ctx: RequestContext, id: string): Promise<Chat | null> {

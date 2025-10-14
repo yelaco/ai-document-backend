@@ -4,9 +4,16 @@ import { ChatsController } from './chats.controller';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Chat } from './entities/chat.entity';
+import { AiModule } from '../ai/ai.module';
+import { EmbeddingModule } from '../embedding/embedding.module';
 
 @Module({
-  imports: [ConfigModule, TypeOrmModule.forFeature([Chat])],
+  imports: [
+    ConfigModule,
+    TypeOrmModule.forFeature([Chat]),
+    AiModule,
+    EmbeddingModule,
+  ],
   controllers: [ChatsController],
   providers: [ChatsService],
 })

@@ -3,7 +3,6 @@ import {
   Post,
   UseInterceptors,
   UploadedFile,
-  Sse,
   Query,
   UseGuards,
   NotFoundException,
@@ -20,9 +19,7 @@ import {
   type RequestContext,
 } from '../shared/interceptors/request-context.interceptor';
 import { ListDocumentDto } from './dto/list-document.dto';
-import { AskDocumentDto } from './dto/ask-document.dto';
 import { PaginationResponseDto } from '../shared/dto/pagination-response.dto';
-import { map } from 'rxjs';
 
 @UseGuards(JwtAuthGuard)
 @Controller('documents')
@@ -40,34 +37,6 @@ export class DocumentsController {
     });
     await this.documentService.process(ctx, document, file);
     return toDocumentDto(document);
-  }
-
-  @Sse('ask')
-  async ask(
-    @Context() ctx: RequestContext,
-    @Query() askDocumentDto: AskDocumentDto,
-  ) {
-    const document = await this.documentService.findOne(
-      ctx,
-      askDocumentDto.documentId,
-    );
-    if (!document) {
-      throw new NotFoundException('Document not found');
-    }
-    const obs = await this.documentService.ask(
-      ctx,
-      askDocumentDto.documentId,
-      askDocumentDto.question,
-    );
-
-    return obs.pipe(
-      map(
-        (dto) =>
-          ({
-            data: dto,
-          }) as MessageEvent,
-      ),
-    );
   }
 
   @Get()

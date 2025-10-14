@@ -3,14 +3,14 @@ import { UsersService } from './users.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 
-const mockUserRepository = {
-  save: jest.fn(),
-  findOne: jest.fn(),
-  find: jest.fn(),
-};
-
 describe('UsersService', () => {
   let service: UsersService;
+
+  const mockUserRepository = {
+    save: jest.fn(),
+    findOne: jest.fn(),
+    find: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

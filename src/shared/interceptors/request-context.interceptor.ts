@@ -19,7 +19,6 @@ export class RequestContextInterceptor implements NestInterceptor {
     next: CallHandler<any>,
   ): Observable<any> | Promise<Observable<any>> {
     const request = context.switchToHttp().getRequest();
-    console.log('RequestContextInterceptor - User:', request.user);
 
     request.context = {
       userId: request.user?.userId || '',

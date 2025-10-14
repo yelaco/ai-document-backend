@@ -3,7 +3,6 @@ import { DocumentsService } from './documents.service';
 import { DocumentsController } from './documents.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Document } from './entities/document.entity';
-import { AiModule } from '../ai/ai.module';
 import { ConfigModule } from '@nestjs/config';
 import { EmbeddingModule } from '../embedding/embedding.module';
 
@@ -11,7 +10,6 @@ import { EmbeddingModule } from '../embedding/embedding.module';
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([Document]),
-    AiModule,
     EmbeddingModule,
   ],
   controllers: [DocumentsController],

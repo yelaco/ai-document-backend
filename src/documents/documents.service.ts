@@ -1,22 +1,15 @@
 import {
-  Inject,
   Injectable,
   InternalServerErrorException,
-  MessageEvent,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Document } from './entities/document.entity';
 import { Repository } from 'typeorm';
 import pdf from 'pdf-parse';
-import { AI_SERVICE } from '../ai/ai.constants';
-import { type AiService } from '../ai/ai.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
-import { endWith, map, Observable } from 'rxjs';
-import { buildPrompt } from '../ai/ai.prompts';
 import { EmbeddingService } from '../embedding/embedding.service';
 import { RequestContext } from '../shared/interceptors/request-context.interceptor';
-import { AnswerDocumentDto } from './dto/ask-document.dto';
 
 @Injectable()
 export class DocumentsService {
@@ -24,8 +17,6 @@ export class DocumentsService {
     @InjectRepository(Document)
     private documentRepo: Repository<Document>,
     private readonly embeddingService: EmbeddingService,
-    @Inject(AI_SERVICE)
-    private readonly aiService: AiService,
   ) {}
 
   async process(
@@ -43,34 +34,6 @@ export class DocumentsService {
         'Failed to process document: ' + (error as Error).message,
       );
     }
-  }
-
-  async ask(
-    ctx: RequestContext,
-    documentId: string,
-    question: string,
-  ): Promise<Observable<AnswerDocumentDto>> {
-    const questionContext = await this.embeddingService.vectorSearchDocument(
-      documentId,
-      question,
-    );
-
-    const observableAnswer = await this.aiService.answer(
-      buildPrompt(question, questionContext),
-    );
-
-    return observableAnswer.pipe(
-      map(
-        (text) =>
-          ({
-            text: text,
-            status: 'in-progress',
-          }) as AnswerDocumentDto,
-      ),
-      endWith({
-        status: 'completed',
-      } as AnswerDocumentDto),
-    );
   }
 
   async create(

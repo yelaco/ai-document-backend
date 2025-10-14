@@ -11,6 +11,8 @@ import { EmbeddingModule } from './embedding/embedding.module';
 import { ChatsModule } from './chats/chats.module';
 import Joi from 'joi';
 import envConfig from './config/env.config';
+import { Chat } from './chats/entities/chat.entity';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
   imports: [
@@ -39,7 +41,7 @@ import envConfig from './config/env.config';
         password: configService.get<string>('database.pass'),
         synchronize: configService.get<string>('appEnv') === 'development',
         logging: configService.get<string>('appEnv') === 'development',
-        entities: [Document, User],
+        entities: [Document, User, Chat],
       }),
     }),
     AiModule,
@@ -48,6 +50,7 @@ import envConfig from './config/env.config';
     AuthModule,
     EmbeddingModule,
     ChatsModule,
+    MessagesModule,
   ],
 })
 export class AppModule {}
