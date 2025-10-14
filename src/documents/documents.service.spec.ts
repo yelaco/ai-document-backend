@@ -53,7 +53,7 @@ describe('DocumentsService', () => {
       const possibleStatuses = ['in-progress', 'completed'];
 
       result.subscribe((event) => {
-        expect(possibleStatuses).toContain(event.data['status']);
+        expect(possibleStatuses).toContain(event.status);
       });
     });
   });

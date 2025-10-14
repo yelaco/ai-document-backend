@@ -22,6 +22,7 @@ import {
 import { ListDocumentDto } from './dto/list-document.dto';
 import { AskDocumentDto } from './dto/ask-document.dto';
 import { PaginationResponseDto } from '../shared/dto/pagination-response.dto';
+import { map } from 'rxjs';
 
 @UseGuards(JwtAuthGuard)
 @Controller('documents')
@@ -53,10 +54,19 @@ export class DocumentsController {
     if (!document) {
       throw new NotFoundException('Document not found');
     }
-    return this.documentService.ask(
+    const obs = await this.documentService.ask(
       ctx,
       askDocumentDto.documentId,
       askDocumentDto.question,
+    );
+
+    return obs.pipe(
+      map(
+        (dto) =>
+          ({
+            data: dto,
+          }) as MessageEvent,
+      ),
     );
   }
 

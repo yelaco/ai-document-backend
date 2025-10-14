@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { User } from './users/entities/user.entity';
 import { EmbeddingModule } from './embedding/embedding.module';
+import { ChatsModule } from './chats/chats.module';
 import Joi from 'joi';
 import envConfig from './config/env.config';
 
@@ -46,6 +47,7 @@ import envConfig from './config/env.config';
     UsersModule,
     AuthModule,
     EmbeddingModule,
+    ChatsModule,
   ],
 })
 export class AppModule {}

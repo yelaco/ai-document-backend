@@ -16,12 +16,13 @@ import { endWith, map, Observable } from 'rxjs';
 import { buildPrompt } from '../ai/ai.prompts';
 import { EmbeddingService } from '../embedding/embedding.service';
 import { RequestContext } from '../shared/interceptors/request-context.interceptor';
+import { AnswerDocumentDto } from './dto/ask-document.dto';
 
 @Injectable()
 export class DocumentsService {
   constructor(
     @InjectRepository(Document)
-    private documentsRepository: Repository<Document>,
+    private documentRepo: Repository<Document>,
     private readonly embeddingService: EmbeddingService,
     @Inject(AI_SERVICE)
     private readonly aiService: AiService,
@@ -48,7 +49,7 @@ export class DocumentsService {
     ctx: RequestContext,
     documentId: string,
     question: string,
-  ): Promise<Observable<MessageEvent>> {
+  ): Promise<Observable<AnswerDocumentDto>> {
     const questionContext = await this.embeddingService.vectorSearchDocument(
       documentId,
       question,
@@ -62,17 +63,13 @@ export class DocumentsService {
       map(
         (text) =>
           ({
-            data: {
-              text: text,
-              status: 'in-progress',
-            },
-          }) as MessageEvent,
+            text: text,
+            status: 'in-progress',
+          }) as AnswerDocumentDto,
       ),
       endWith({
-        data: {
-          status: 'completed',
-        },
-      } as MessageEvent),
+        status: 'completed',
+      } as AnswerDocumentDto),
     );
   }
 
@@ -80,12 +77,12 @@ export class DocumentsService {
     ctx: RequestContext,
     createDocumentDto: CreateDocumentDto,
   ): Promise<Document> {
-    const document = this.documentsRepository.create({
+    const document = this.documentRepo.create({
       title: createDocumentDto.title,
       userId: ctx.userId,
     });
 
-    return await this.documentsRepository.save(document);
+    return this.documentRepo.save(document);
   }
 
   async findPaginated(
@@ -93,7 +90,7 @@ export class DocumentsService {
     page: number,
     pageSize: number,
   ): Promise<{ data: Document[]; total: number }> {
-    const [data, total] = await this.documentsRepository.findAndCount({
+    const [data, total] = await this.documentRepo.findAndCount({
       skip: (page - 1) * pageSize,
       take: pageSize,
       order: { createdAt: 'DESC' },
@@ -106,12 +103,12 @@ export class DocumentsService {
       throw new UnauthorizedException();
     }
 
-    return this.documentsRepository.findOne({
+    return this.documentRepo.findOne({
       where: { id: id, userId: ctx.userId },
     });
   }
 
   async remove(ctx: RequestContext, id: string): Promise<void> {
-    await this.documentsRepository.delete(id);
+    await this.documentRepo.delete(id);
   }
 }
