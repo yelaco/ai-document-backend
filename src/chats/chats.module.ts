@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Chat } from './entities/chat.entity';
 import { AiModule } from '../ai/ai.module';
 import { EmbeddingModule } from '../embedding/embedding.module';
+import { MessagesModule } from '../messages/messages.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { EmbeddingModule } from '../embedding/embedding.module';
     TypeOrmModule.forFeature([Chat]),
     AiModule,
     EmbeddingModule,
+    MessagesModule,
   ],
   controllers: [ChatsController],
   providers: [ChatsService],

@@ -3,6 +3,7 @@ import { AiService } from './ai.service';
 import { GoogleGenAI } from '@google/genai';
 import { from, map, Observable } from 'rxjs';
 import { GEMINI_AI } from './ai.constants';
+import { AiResponseDto } from './dto/ai-response.dto';
 
 @Injectable()
 export class GeminiAiService implements AiService {
@@ -11,7 +12,7 @@ export class GeminiAiService implements AiService {
     private readonly ai: GoogleGenAI,
   ) {}
 
-  async answer(question: string): Promise<Observable<string>> {
+  async answer(question: string): Promise<Observable<AiResponseDto>> {
     const response = await this.ai.models.generateContentStream({
       model: 'gemini-2.5-flash',
       contents: question,
@@ -22,6 +23,13 @@ export class GeminiAiService implements AiService {
         },
       },
     });
-    return from(response).pipe(map((resp) => resp.text || ''));
+    return from(response).pipe(
+      map(
+        (resp) =>
+          ({
+            answer: resp.text || '',
+          }) as AiResponseDto,
+      ),
+    );
   }
 }

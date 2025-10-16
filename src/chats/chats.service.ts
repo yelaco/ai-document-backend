@@ -10,12 +10,14 @@ import { Repository } from 'typeorm';
 import { Chat } from './entities/chat.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RequestContext } from '../shared/interceptors/request-context.interceptor';
-import { endWith, map, Observable } from 'rxjs';
+import { endWith, map, Observable, tap } from 'rxjs';
 import { AI_SERVICE } from '../ai/ai.constants';
 import { buildPrompt } from '../ai/ai.prompts';
 import { type AiService } from '../ai/ai.service';
 import { AnswerDocumentDto } from '../chats/dto/ask-document.dto';
 import { EmbeddingService } from '../embedding/embedding.service';
+import { MessagesService } from '../messages/messages.service';
+import { ChatResponseProgress, ChatRole } from './chats.enum';
 
 @Injectable()
 export class ChatsService {
@@ -23,6 +25,7 @@ export class ChatsService {
     @InjectRepository(Chat)
     private chatRepo: Repository<Chat>,
     private readonly embeddingService: EmbeddingService,
+    private readonly messageService: MessagesService,
     @Inject(AI_SERVICE)
     private readonly aiService: AiService,
   ) {}
@@ -36,6 +39,18 @@ export class ChatsService {
     if (!chat) {
       throw new NotFoundException('Chat not found');
     }
+
+    // Save user message
+    this.messageService
+      .process({
+        chatId: chat.id,
+        content: question,
+        role: ChatRole.USER,
+      })
+      .catch((err) => {
+        console.error('Failed to process message:', err);
+      });
+
     const questionContext = await this.embeddingService.vectorSearchDocument(
       chat.documentId,
       question,
@@ -46,15 +61,26 @@ export class ChatsService {
     );
 
     return observableAnswer.pipe(
+      tap((aiResp) => {
+        this.messageService
+          .process({
+            chatId: chat.id,
+            content: aiResp.answer,
+            role: ChatRole.ASSISTANT,
+          })
+          .catch((err) => {
+            console.error('Failed to process message:', err);
+          });
+      }),
       map(
         (text) =>
           ({
-            text: text,
-            status: 'in-progress',
+            text: text.answer,
+            status: ChatResponseProgress.IN_PROGRESS,
           }) as AnswerDocumentDto,
       ),
       endWith({
-        status: 'completed',
+        status: ChatResponseProgress.COMPLETED,
       } as AnswerDocumentDto),
     );
   }

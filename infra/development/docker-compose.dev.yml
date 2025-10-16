@@ -11,6 +11,7 @@ services:
       - 3000:3000
     depends_on:
       - db
+      - redis
     networks:
       - app_net
 
@@ -39,6 +40,8 @@ services:
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    networks:
+      - app_net
 
   vector_db:
     image: chromadb/chroma
