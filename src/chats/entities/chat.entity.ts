@@ -2,11 +2,16 @@ import { User } from '../../users/entities/user.entity';
 import { Document } from '../../documents/entities/document.entity';
 import {
   Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  type Relation,
 } from 'typeorm';
+import { Message } from 'src/messages/entities/message.entity';
 
 @Entity()
 export class Chat {
@@ -16,21 +21,21 @@ export class Chat {
   @Column({ nullable: true })
   title?: string;
 
-  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @Column({ type: 'timestamptz' })
+  @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ name: 'document_id' })
+  documentId: string;
 
   @ManyToOne(() => Document, (document) => document.chats, {
     cascade: true,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'document_id' })
-  document: typeof Document;
-
-  @Column({ name: 'document_id' })
-  documentId: string;
+  document: Relation<Document>;
 
   @Column({ name: 'user_id' })
   userId: string;
@@ -40,5 +45,8 @@ export class Chat {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'user_id' })
-  user: typeof User;
+  user: Relation<User>;
+
+  @OneToMany(() => Message, (message) => message.chat)
+  messages: Relation<Message>[];
 }

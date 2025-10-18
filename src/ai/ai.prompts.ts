@@ -1,3 +1,5 @@
+import { PromptDto } from './dto/prompt.dto';
+
 const systemInstruction = `
 [SYSTEM INSTRUCTION]
 You are a helpful and accurate assistant specialized in answering questions based on provided documents.
@@ -9,14 +11,20 @@ state clearly, "I am unable to find the answer in the provided documents." and e
 4. Format your answer clearly and concisely in Markdown.
 `.trim();
 
-export function buildPrompt(query: string, context: string[]): string {
+export function buildPrompt(promptDto: PromptDto): string {
   return `
   ${systemInstruction}
 
+  [DOCUMENT_METADATA]
+  - Title: ${promptDto.documentTitle}
+
+  [CONSERVATION_HISTORY]
+  ${promptDto.pastConservations ? promptDto.pastConservations.join('\n---\n') : 'No prior conversations.'}
+
   [CONTEXT]
-  ${context.join('\n---\n')}
+  ${promptDto.context.join('\n---\n')}
 
   [USER QUERY]
-  ${query}
+  ${promptDto.query}
   `.trim();
 }

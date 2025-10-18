@@ -7,6 +7,9 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+  type Relation,
 } from 'typeorm';
 
 @Entity()
@@ -17,8 +20,11 @@ export class Document {
   @Column()
   title: string;
 
-  @Column({ type: 'timestamptz', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 
   @Column({ name: 'user_id' })
   userId: string;
@@ -28,8 +34,8 @@ export class Document {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'user_id' })
-  user: typeof User;
+  user: Relation<User>;
 
   @OneToMany(() => Chat, (chat) => chat.document)
-  chats: Chat[];
+  chats: Relation<Chat>[];
 }

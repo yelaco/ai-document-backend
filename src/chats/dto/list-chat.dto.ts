@@ -1,11 +1,8 @@
-import { IsNumber, IsOptional } from 'class-validator';
+import { IsOptional, IsUUID } from 'class-validator';
+import { PaginationParamsDto } from 'src/shared/dto/pagination-params.dto';
 
-export class ListChatDto {
-  @IsNumber()
+export class ListChatDto extends PaginationParamsDto {
+  @IsUUID()
   @IsOptional()
-  page?: number;
-
-  @IsNumber()
-  @IsOptional()
-  pageSize?: number;
+  documentId?: string;
 }

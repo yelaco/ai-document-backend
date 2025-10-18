@@ -1,11 +1,3 @@
-import { IsNumber, IsOptional } from 'class-validator';
+import { PaginationParamsDto } from '../../shared/dto/pagination-params.dto';
 
-export class ListDocumentDto {
-  @IsNumber()
-  @IsOptional()
-  page?: number;
-
-  @IsNumber()
-  @IsOptional()
-  pageSize?: number;
-}
+export class ListDocumentDto extends PaginationParamsDto {}

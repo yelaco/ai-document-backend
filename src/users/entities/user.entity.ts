@@ -1,6 +1,14 @@
 import { Exclude } from 'class-transformer';
 import { Document } from '../../documents/entities/document.entity';
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+  type Relation,
+} from 'typeorm';
 import { Chat } from '../../chats/entities/chat.entity';
 
 @Entity()
@@ -18,9 +26,15 @@ export class User {
   @Column()
   fullName: string;
 
+  @CreateDateColumn()
+  createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
+
   @OneToMany(() => Document, (document) => document.user)
-  documents: Document[];
+  documents: Relation<Document>[];
 
   @OneToMany(() => Chat, (chat) => chat.user)
-  chats: Chat[];
+  chats: Relation<Chat>[];
 }

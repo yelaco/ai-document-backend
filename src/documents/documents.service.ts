@@ -53,7 +53,13 @@ export class DocumentsService {
     page: number,
     pageSize: number,
   ): Promise<{ data: Document[]; total: number }> {
+    const userId = ctx.userId;
+    if (!userId) {
+      throw new UnauthorizedException();
+    }
+
     const [data, total] = await this.documentRepo.findAndCount({
+      where: { userId },
       skip: (page - 1) * pageSize,
       take: pageSize,
       order: { createdAt: 'DESC' },
