@@ -1,16 +1,14 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Param, Delete, Query } from '@nestjs/common';
 import { MessagesService } from './messages.service';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { UpdateMessageDto } from './dto/update-message.dto';
 import { ApiTags, ApiOperation, ApiBody, ApiResponse } from '@nestjs/swagger';
+import {
+  Context,
+  type RequestContext,
+} from '../shared/interceptors/request-context.interceptor';
+import { ListMessageDto } from './dto/list-message.dto';
+import { PaginationResponseDto } from '../shared/dto/pagination-response.dto';
+import { MessageDto, toMessageDto } from './dto/message.dto';
 
 @ApiTags('messages')
 @Controller('messages')
@@ -27,28 +25,34 @@ export class MessagesController {
     description: 'Message created.',
     schema: { example: { id: 1, content: 'Message text' } },
   })
-  @Post()
-  create(@Body() createMessageDto: CreateMessageDto) {
-    return this.messagesService.create(createMessageDto);
-  }
-
   @Get()
-  findAll() {
-    return this.messagesService.findAll();
+  async findPaginated(
+    @Context() ctx: RequestContext,
+    @Query() listMessageDto: ListMessageDto,
+  ): Promise<PaginationResponseDto<MessageDto>> {
+    const { data, total } = await this.messagesService.findPaginated(
+      ctx,
+      listMessageDto.chatId,
+      listMessageDto.page || 1,
+      listMessageDto.pageSize || 10,
+    );
+    return {
+      items: data.map(toMessageDto),
+      meta: {
+        total,
+        page: listMessageDto.page || 1,
+        pageSize: listMessageDto.pageSize || 10,
+      },
+    };
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.messagesService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMessageDto: UpdateMessageDto) {
-    return this.messagesService.update(+id, updateMessageDto);
+  findOne(@Context() ctx: RequestContext, @Param('id') id: string) {
+    return this.messagesService.findOne(ctx, id);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.messagesService.remove(+id);
+  remove(@Context() ctx: RequestContext, @Param('id') id: string) {
+    return this.messagesService.remove(ctx, id);
   }
 }

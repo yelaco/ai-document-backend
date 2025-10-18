@@ -5,10 +5,17 @@ import { MessagesService } from './messages.service';
 describe('MessagesController', () => {
   let controller: MessagesController;
 
+  const mockMessageService = {};
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MessagesController],
-      providers: [MessagesService],
+      providers: [
+        {
+          provide: MessagesService,
+          useValue: mockMessageService,
+        },
+      ],
     }).compile();
 
     controller = module.get<MessagesController>(MessagesController);

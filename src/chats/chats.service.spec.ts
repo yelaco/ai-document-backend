@@ -7,6 +7,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Chat } from './entities/chat.entity';
 import { EmbeddingService } from '../embedding/embedding.service';
 import { mockEmbeddingService } from '../embedding/embedding.service.spec';
+import { MessagesService } from '../messages/messages.service';
 
 describe('ChatsService', () => {
   let service: ChatsService;
@@ -28,6 +29,10 @@ describe('ChatsService', () => {
     find: jest.fn(),
   };
 
+  const mockMessageService = {
+    process: jest.fn().mockImplementation(() => Promise.resolve()),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -43,6 +48,10 @@ describe('ChatsService', () => {
         {
           provide: EmbeddingService,
           useValue: mockEmbeddingService,
+        },
+        {
+          provide: MessagesService,
+          useValue: mockMessageService,
         },
       ],
     }).compile();

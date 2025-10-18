@@ -14,6 +14,7 @@ import envConfig from './config/env.config';
 import { Chat } from './chats/entities/chat.entity';
 import { MessagesModule } from './messages/messages.module';
 import { BullModule } from '@nestjs/bullmq';
+import { Message } from './messages/entities/message.entity';
 
 @Module({
   imports: [
@@ -42,7 +43,7 @@ import { BullModule } from '@nestjs/bullmq';
         password: configService.get<string>('database.pass'),
         synchronize: configService.get<string>('appEnv') === 'development',
         logging: configService.get<string>('appEnv') === 'development',
-        entities: [Document, User, Chat],
+        entities: [Document, User, Chat, Message],
       }),
     }),
     BullModule.forRootAsync({
