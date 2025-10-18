@@ -13,6 +13,8 @@ import Joi from 'joi';
 import envConfig from './config/env.config';
 import { Chat } from './chats/entities/chat.entity';
 import { MessagesModule } from './messages/messages.module';
+import { BullModule } from '@nestjs/bullmq';
+import { Message } from './messages/entities/message.entity';
 
 @Module({
   imports: [
@@ -41,7 +43,18 @@ import { MessagesModule } from './messages/messages.module';
         password: configService.get<string>('database.pass'),
         synchronize: configService.get<string>('appEnv') === 'development',
         logging: configService.get<string>('appEnv') === 'development',
-        entities: [Document, User, Chat],
+        entities: [Document, User, Chat, Message],
+      }),
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('redis.host'),
+          port: configService.get<number>('redis.port'),
+          password: configService.get<string>('redis.pass'),
+        },
       }),
     }),
     AiModule,

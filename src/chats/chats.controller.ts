@@ -20,7 +20,7 @@ import {
   type RequestContext,
 } from '../shared/interceptors/request-context.interceptor';
 import { ListChatDto } from './dto/list-chat.dto';
-import { toChatDto } from './dto/chat.dto';
+import { ChatDto, toChatDto } from './dto/chat.dto';
 import { map, Observable } from 'rxjs';
 import { AskDocumentDto } from '../chats/dto/ask-document.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
@@ -99,12 +99,13 @@ export class ChatsController {
   @Get()
   async findPaginated(
     @Context() ctx: RequestContext,
-    listChatDto: ListChatDto,
+    @Body() listChatDto: ListChatDto,
   ) {
     const { data, total } = await this.chatsService.findPaginated(
       ctx,
       listChatDto.page || 1,
       listChatDto.pageSize || 10,
+      listChatDto.documentId,
     );
     return {
       items: data.map(toChatDto),
@@ -126,7 +127,10 @@ export class ChatsController {
     schema: { example: { id: 'chat1', title: 'Chat title' } },
   })
   @Get(':id')
-  async findOne(@Context() ctx: RequestContext, @Param('id') id: string) {
+  async findOne(
+    @Context() ctx: RequestContext,
+    @Param('id') id: string,
+  ): Promise<ChatDto> {
     const chat = await this.chatsService.findOne(ctx, id);
     if (!chat) {
       throw new NotFoundException('Chat not found');

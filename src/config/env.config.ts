@@ -11,6 +11,12 @@ interface VectorDatabaseConfig {
   port: number;
 }
 
+interface RedisConfig {
+  host: string | undefined;
+  port: number;
+  pass: string | undefined;
+}
+
 interface AiConfig {
   serviceType: string | undefined;
   geminiApiKey: string | undefined;
@@ -34,6 +40,14 @@ export function vectorDatabaseConfig(): VectorDatabaseConfig {
   };
 }
 
+export function redisConfig(): RedisConfig {
+  return {
+    host: process.env.REDIS_HOST || 'redis',
+    port: process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : 6379,
+    pass: process.env.REDIS_PASS,
+  };
+}
+
 export function aiConfig(): AiConfig {
   return {
     serviceType: process.env.AI_SERVICE_TYPE,
@@ -47,5 +61,6 @@ export default () => ({
   port: process.env.APP_PORT ? parseInt(process.env.APP_PORT) : 3000,
   database: databaseConfig(),
   vectorDatabase: vectorDatabaseConfig(),
+  redis: redisConfig(),
   ai: aiConfig(),
 });
