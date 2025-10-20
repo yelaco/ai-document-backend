@@ -25,6 +25,30 @@ export class MessagesController {
     description: 'Message created.',
     schema: { example: { id: 1, content: 'Message text' } },
   })
+  @ApiOperation({
+    summary: 'List messages',
+    description: 'Get a paginated list of messages.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated message list.',
+    schema: {
+      example: {
+        items: [
+          {
+            id: 'msg1',
+            role: 'user',
+            content: 'Hello',
+            chatId: 'chat1',
+            timestamp: '2024-01-01T00:00:00Z',
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+          },
+        ],
+        meta: { total: 1, page: 1, pageSize: 10 },
+      },
+    },
+  })
   @Get()
   async findPaginated(
     @Context() ctx: RequestContext,
@@ -46,11 +70,39 @@ export class MessagesController {
     };
   }
 
+  @ApiOperation({
+    summary: 'Get message by id',
+    description: 'Get a single message by id.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Message details.',
+    schema: {
+      example: {
+        id: 'msg1',
+        role: 'user',
+        content: 'Hello',
+        chatId: 'chat1',
+        timestamp: '2024-01-01T00:00:00Z',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
+      },
+    },
+  })
   @Get(':id')
   findOne(@Context() ctx: RequestContext, @Param('id') id: string) {
     return this.messagesService.findOne(ctx, id);
   }
 
+  @ApiOperation({
+    summary: 'Delete message',
+    description: 'Delete a message by id.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Message deleted.',
+    schema: { example: { success: true } },
+  })
   @Delete(':id')
   remove(@Context() ctx: RequestContext, @Param('id') id: string) {
     return this.messagesService.remove(ctx, id);
