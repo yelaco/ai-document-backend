@@ -100,10 +100,15 @@ DB_USER=aidocument
 DB_PASS=password
 DB_NAME=aidocument
 
-# AI Service Configuration
-AI_SERVICE_TYPE=gemini  # or 'anthropic'
+# Redis
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_PASS=password
+
+# AI_SERVICE_TYPE=anthropic
+AI_SERVICE_TYPE=gemini
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
 GEMINI_API_KEY=your_gemini_api_key_here
-# ANTHROPIC_API_KEY=your_anthropic_api_key_here
 ```
 
 ### 3. Install Dependencies
@@ -211,6 +216,9 @@ test/                  # End-to-end tests
 | `DB_USER`           | Database username                     | -             |
 | `DB_PASS`           | Database password                     | -             |
 | `DB_NAME`           | Database name                         | -             |
+| `REDIS_HOST`        | Redis host                            | `redis`       |
+| `REDIS_PORT`        | Redis port                            | `6379`        |
+| `REDIS_PASS`        | Redis password                        | `password`    |
 | `AI_SERVICE_TYPE`   | AI provider (`gemini` or `anthropic`) | `gemini`      |
 | `GEMINI_API_KEY`    | Google Gemini API key                 | -             |
 | `ANTHROPIC_API_KEY` | Anthropic Claude API key              | -             |
