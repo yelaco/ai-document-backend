@@ -8,14 +8,29 @@ A powerful NestJS-based backend application that enables users to upload PDF doc
 
 - **PDF Document Processing**: Upload and parse PDF documents with automatic text extraction
 - **AI-Powered Q&A**: Ask questions about uploaded documents and receive intelligent answers
-- **Vector Search**: Advanced semantic search using ChromaDB for document retrieval
+- **Chats and Messages**: Threaded conversations with full CRUD endpoints, chat message persistence, search, and context retention
+- **Asynchronous Processing**: Fast, scalable document and chat message embedding using BullMQ with Redis queue backend
+- **Vector Search**: Advanced semantic search using ChromaDB for document and message retrieval
 - **Multiple AI Providers**: Support for both Google Gemini and Anthropic Claude models
 - **User Authentication**: Secure JWT-based authentication system
+- **GCP Secret Manager Integration**: Secure management of secrets and credentials for cloud and production deployments
 - **Real-time Streaming**: Server-sent events for streaming AI responses
 - **Docker Support**: Complete containerized deployment with Docker Compose
 - **Observability**: Built-in OpenTelemetry integration with Zipkin tracing
 
 ## 🏗️ Architecture
+
+## 🛡️ API Documentation & New Endpoints
+
+The API now includes comprehensive support for threaded conversations (Chats) and chat messages (Messages) with full CRUD endpoints. All endpoints are documented with Swagger/OpenAPI.
+
+- **Chats**
+  - Create, list, retrieve, update, and delete chat threads
+  - Ask questions about documents in a chat context (with streamed responses)
+- **Messages**
+  - Create and manage chat messages, with semantic search and embedding
+  - Full message pagination and context retention
+- **Swagger/OpenAPI**: Full API documentation is available at `/api` when the server is running.
 
 The application implements a modern RAG (Retrieval-Augmented Generation) architecture:
 
@@ -41,8 +56,10 @@ The application implements a modern RAG (Retrieval-Augmented Generation) archite
 - **Runtime**: Bun
 - **Database**: PostgreSQL with TypeORM
 - **Vector Database**: ChromaDB
+- **Queue & Worker**: Redis + BullMQ (asynchronous tasks, message embedding)
 - **AI Models**: Google Gemini, Anthropic Claude
 - **Authentication**: JWT
+- **Secret Management**: GCP Secret Manager
 - **Text Processing**: LangChain, pdf-parse
 - **Containerization**: Docker & Docker Compose
 - **Observability**: OpenTelemetry, Zipkin
@@ -164,12 +181,13 @@ bun run start:dev
 
 ```
 src/
-├── ai/                 # AI service implementations
-│   ├── ai.service.ts   # AI service interface
-│   ├── gemini.service.ts
-│   └── anthropic.service.ts
-├── auth/               # Authentication module
+├── ai/                 # AI service implementations (Gemini, Anthropic, etc)
+├── auth/               # Authentication and user management
+├── chats/              # Chat session and question handling (CRUD, SSE)
 ├── documents/          # Document processing and Q&A
+├── embedding/          # Document/message embedding and vector search
+├── messages/           # Chat message CRUD, processing, BullMQ queue
+├── secret-manager/     # GCP Secret Manager integration
 ├── users/              # User management
 ├── shared/             # Shared utilities and interceptors
 ├── app.module.ts       # Main application module
@@ -213,6 +231,15 @@ The application includes comprehensive observability features:
 - **Health Checks**: Database and ChromaDB connectivity monitoring
 
 Access Zipkin UI at http://localhost:9411 to view distributed traces.
+
+## 📝 Migration Notes
+
+**Important:** The latest updates add new modules (Chats, Messages), BullMQ for queue processing, and Redis as a required backend for async tasks. Existing deployments should:
+
+- Run database migrations to add Chats and Messages tables (see `/src/chats` and `/src/messages`)
+- Ensure Redis is deployed and configured for BullMQ queues
+- Review `.env` for new variables (see above)
+- Populate GCP Secret Manager if using for secret management
 
 ## 🚀 Deployment
 
