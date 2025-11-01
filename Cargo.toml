@@ -5,3 +5,17 @@ edition = "2024"
 
 [dependencies]
 actix-web = "4.11.0"
+async-trait = "0.1.89"
+chrono = "0.4.42"
+serde = "1.0.228"
+sqlx = { version = "0.8", features = [
+  "runtime-tokio-native-tls",
+  "postgres",
+  "macros",
+] }
+uuid = { version = "1.18.1", features = ["serde", "v4"] }
+dotenvy = "0.15.7"
+config = "0.15.18"
+tracing = { version = "0.1.41", features = ["attributes"] }
+tracing-subscriber = "0.3.20"
+tracing-actix-web = "0.7.19"

@@ -1,33 +1,54 @@
-use actix_web::{App, HttpResponse, HttpServer, Responder, get, post, web};
+mod api;
+mod application;
+mod config;
+mod domain;
+mod infrastructure;
+mod interfaces;
 
-struct AppState {
-    app_name: String,
-}
+use actix_web::{App, HttpServer, web};
+use sqlx::postgres::PgPoolOptions;
+use std::sync::Arc;
+use tracing_actix_web::TracingLogger;
 
-#[get("/")]
-async fn hello(data: web::Data<AppState>) -> impl Responder {
-    let app_name = &data.app_name;
-    HttpResponse::Ok().body(format!("Hello {app_name}!"))
-}
+use crate::api::http::routes::configure as configure_http;
+use crate::application::services::UserService;
+use crate::infrastructure::persistence::user::PostgresUserRepository;
 
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
-}
-
-async fn manual_hello() -> impl Responder {
-    HttpResponse::Ok().body("Hey there!")
+fn init_tracing() {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
-        App::new()
-            .service(hello)
-            .service(echo)
-            .route("/hey", web::get().to(manual_hello))
+    init_tracing();
+    let settings = crate::config::load().expect("Failed to load configuration");
+
+    let pool = PgPoolOptions::new()
+        .max_connections(settings.database.max_connections)
+        .connect(&settings.database.url)
+        .await
+        .expect("Failed to create pool");
+
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await
+        .expect("Failed to run migrations");
+
+    let user_repo = Arc::new(PostgresUserRepository::new(pool));
+
+    HttpServer::new({
+        let settings = settings.clone();
+        move || {
+            App::new()
+                .app_data(actix_web::web::Data::new(settings.clone()))
+                .app_data(web::Data::new(UserService::new(user_repo.clone())))
+                .configure(configure_http)
+                .wrap(TracingLogger::default())
+        }
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", settings.port))?
     .run()
     .await
 }

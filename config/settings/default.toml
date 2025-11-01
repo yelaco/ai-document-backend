@@ -1,0 +1,5 @@
+app_name = "ai_document_backend"
+port = 8080
+
+[database]
+max_connections = 5

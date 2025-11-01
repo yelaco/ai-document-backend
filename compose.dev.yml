@@ -1,20 +1,4 @@
 services:
-  app:
-    build:
-      context: ../../
-      dockerfile: infra/development/Dockerfile.development
-    container_name: ai-document-backend-dev
-    volumes:
-      - ../../:/usr/src/app
-      - /usr/src/app/node_modules
-    ports:
-      - 3000:3000
-    depends_on:
-      - db
-      - redis
-    networks:
-      - app_net
-
   db:
     image: postgres:15-alpine
     container_name: postgres-ai-document-dev
@@ -74,7 +58,7 @@ services:
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.111.0
     container_name: otel-collector-for-chromadb-ai-document-dev
-    command: ['--config=/etc/otel-collector-config.yaml']
+    command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
       - ${PWD}/config/otel-collector-config.yaml:/etc/otel-collector-config.yaml
     networks:
