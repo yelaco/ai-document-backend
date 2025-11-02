@@ -5,12 +5,16 @@ use actix_web_httpauth::extractors::basic::BasicAuth;
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use uuid::Uuid;
 
-use crate::application::auth::services::AuthService;
+use crate::application::auth::AuthService;
 
 pub struct AuthContext {
     pub user_id: Uuid,
-    pub roles: Vec<String>,
-    pub permissions: Vec<String>,
+    pub role: Role,
+}
+
+pub enum Role {
+    Admin,
+    User,
 }
 
 pub async fn basic_auth_validator(
@@ -30,8 +34,7 @@ pub async fn basic_auth_validator(
 
     req.extensions_mut().insert(AuthContext {
         user_id: user.id,
-        roles: vec![],
-        permissions: vec![],
+        role: Role::User,
     });
 
     Ok(req)

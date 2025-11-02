@@ -1,6 +1,7 @@
-use crate::application::auth::services::AuthService;
 use crate::presentation::http::dtos::LoginRequest;
+use crate::{application::auth::AuthService, core::request_context::RequestContext};
 use actix_web::{HttpResponse, Responder, post, web};
+use tracing::instrument;
 
 // #[post("/register")]
 // async fn register(
@@ -17,8 +18,14 @@ use actix_web::{HttpResponse, Responder, post, web};
 // }
 
 #[post("/login")]
-async fn login(auth: web::Data<AuthService>, payload: web::Json<LoginRequest>) -> impl Responder {
-    match auth.login_user(&payload.email, &payload.password).await {
+#[instrument(name = "login", skip(ctx, auth_service, payload))]
+async fn login(
+    ctx: RequestContext,
+    auth_service: web::Data<AuthService>,
+    payload: web::Json<LoginRequest>,
+) -> impl Responder {
+    tracing::info!(context = format!("{}", ctx));
+    match auth_service.login_user(&payload.email, &payload.password).await {
         Ok(auth) => HttpResponse::Ok().json(serde_json::json!({"access_token": auth.access_token, "refresh_token": auth.refresh_token})),
         Err(e) => HttpResponse::Unauthorized().body(e),
     }

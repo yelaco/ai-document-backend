@@ -3,6 +3,7 @@ use argon2::{
     password_hash::{self, PasswordHasher, SaltString, rand_core::OsRng},
 };
 
+#[derive(std::default::Default)]
 pub struct PasswordService {
     argon2: Argon2<'static>,
 }

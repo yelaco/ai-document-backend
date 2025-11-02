@@ -1,16 +1,16 @@
 use std::sync::Arc;
 
-pub const ACCESS_TOKEN_EXPIRY_SECONDS: usize = 3600; // 1 hour
-
 use jsonwebtoken::{DecodingKey, EncodingKey};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    application::auth::services::PasswordService,
     config::settings::Settings,
     domain::{Auth, User},
+    infrastructure::auth::PasswordService,
     interfaces::UserRepository,
 };
+
+pub const ACCESS_TOKEN_EXPIRY_SECONDS: usize = 3600; // 1 hour
 
 pub struct AuthService {
     repository: Arc<dyn UserRepository>,
