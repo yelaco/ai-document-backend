@@ -12,6 +12,6 @@ impl UserService {
     }
 
     pub async fn get_user_by_id(&self, user_id: &str) -> Result<Option<User>, String> {
-        self.repository.get_user_by_id(user_id)
+        self.repository.get_user_by_id(user_id).await
     }
 }

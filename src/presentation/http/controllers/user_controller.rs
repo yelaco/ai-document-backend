@@ -1,5 +1,5 @@
-use crate::api::http::dtos::UserResponse;
-use crate::application::services::UserService;
+use crate::application::user::UserService;
+use crate::presentation::http::dtos::UserResponse;
 use actix_web::{HttpResponse, Responder, get, web};
 
 #[get("/{id}")]

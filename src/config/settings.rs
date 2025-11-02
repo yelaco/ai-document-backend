@@ -20,10 +20,16 @@ pub struct Settings {
     pub app_name: String,
     pub app_env: AppEnv,
     pub port: u16,
+    pub auth: AuthSettings,
     pub database: DatabaseSettings,
     pub vector_database: VectorDatabaseSettings,
     pub redis: RedisSettings,
     pub ai: AiSettings,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct AuthSettings {
+    pub jwt_secret: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
