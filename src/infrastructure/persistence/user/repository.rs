@@ -5,6 +5,7 @@ use crate::{
 };
 use async_trait::async_trait;
 use sqlx::{Executor, Pool, Postgres, postgres::PgDatabaseError};
+use uuid::Uuid;
 
 pub struct PostgresUserRepository {
     pool: Pool<Postgres>,
@@ -40,20 +41,18 @@ impl UserRepository for PostgresUserRepository {
                 sqlx::Error::Database(db_err) => {
                     let pg_err = db_err.downcast_ref::<PgDatabaseError>();
 
-                    if let Some(pg_err) = pg_err {
-                        if pg_err.code() == "23505" {
-                            return UserPersistenceError::DuplicateUserError {
-                                email: email.to_string(),
-                            };
-                        }
+                    if pg_err.code() == "23505" {
+                        return UserPersistenceError::DuplicateUserError {
+                            email: email.to_string(),
+                        };
                     }
 
-                    UserPersistenceError::DatabaseError {
-                        error: e.to_string(),
+                    UserPersistenceError::UnexpectedError {
+                        message: db_err.to_string(),
                     }
                 }
-                _ => UserPersistenceError::DatabaseError {
-                    error: e.to_string(),
+                _ => UserPersistenceError::UnexpectedError {
+                    message: e.to_string(),
                 },
             })?;
 
@@ -64,7 +63,7 @@ impl UserRepository for PostgresUserRepository {
         let user = sqlx::query_as!(
             UserRow,
             r#"
-            SELECT id, email, password_hash, full_name, created_at, updated_at
+                SELECT id, email, password_hash, full_name, created_at, updated_at
             FROM users
             WHERE email = $1
             "#,
@@ -78,7 +77,21 @@ impl UserRepository for PostgresUserRepository {
         Ok(user)
     }
 
-    async fn get_user_by_id(&self, _user_id: &str) -> Result<Option<User>, String> {
-        Ok(None)
+    async fn get_user_by_id(&self, user_id: Uuid) -> Result<Option<User>, String> {
+        let user = sqlx::query_as!(
+            UserRow,
+            r#"
+            SELECT id, email, password_hash, full_name, created_at, updated_at
+            FROM users
+            WHERE id = $1
+            "#,
+            user_id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map(|opt_row| opt_row.map(User::from))
+        .map_err(|e| e.to_string())?;
+
+        Ok(user)
     }
 }

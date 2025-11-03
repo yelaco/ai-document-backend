@@ -14,6 +14,13 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                     ),
             )
             .service(
+                web::resource("/me")
+                    .wrap(HttpAuthentication::bearer(
+                        crate::core::auth::jwt_auth_validator,
+                    ))
+                    .route(web::get().to(user_controller::get_me)),
+            )
+            .service(
                 web::scope("/users")
                     .wrap(HttpAuthentication::bearer(
                         crate::core::auth::jwt_auth_validator,

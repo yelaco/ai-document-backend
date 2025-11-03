@@ -5,7 +5,9 @@ use actix_web::{FromRequest, HttpRequest};
 use futures::future::{Ready, ready};
 use uuid::Uuid;
 
-#[derive(Clone)]
+use crate::core::auth::AuthContext;
+
+#[derive(Clone, Debug)]
 pub struct RequestContext {
     pub request_id: Uuid,
     pub user_id: Option<Uuid>,
@@ -26,8 +28,12 @@ impl FromRequest for RequestContext {
     type Future = Ready<Result<Self, Self::Error>>;
 
     fn from_request(req: &HttpRequest, _payload: &mut actix_web::dev::Payload) -> Self::Future {
-        if let Some(ctx) = req.extensions().get::<RequestContext>() {
-            return ready(Ok(ctx.clone()));
+        if let Some(ctx) = req.extensions().get::<AuthContext>() {
+            return ready(Ok(RequestContext {
+                // TODO: get request id from middleware
+                request_id: uuid::Uuid::new_v4(),
+                user_id: Some(ctx.user_id),
+            }));
         }
 
         // fallback value if middleware didn't set it

@@ -10,9 +10,8 @@ pub async fn register(
     auth_service: web::Data<AuthService>,
     payload: web::Json<RegisterRequest>,
 ) -> Result<HttpResponse, AuthError> {
-    tracing::info!(context = format!("{}", ctx));
     let user = auth_service
-        .register_user(&payload.email, &payload.full_name, &payload.password)
+        .register_user(ctx, &payload.email, &payload.full_name, &payload.password)
         .await?;
 
     Ok(HttpResponse::Ok().json(UserResponse::from(user)))
@@ -24,7 +23,6 @@ pub async fn login(
     auth_service: web::Data<AuthService>,
     payload: web::Json<LoginRequest>,
 ) -> Result<HttpResponse, AuthError> {
-    tracing::info!(context = format!("{}", ctx));
     let auth = auth_service
         .login_user(ctx, &payload.email, &payload.password)
         .await?;

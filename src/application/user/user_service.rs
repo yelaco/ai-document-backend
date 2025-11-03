@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use uuid::Uuid;
+
 use crate::{domain::User, interfaces::UserRepository};
 
 pub struct UserService {
@@ -11,7 +13,7 @@ impl UserService {
         Self { repository }
     }
 
-    pub async fn get_user_by_id(&self, user_id: &str) -> Result<Option<User>, String> {
+    pub async fn get_user_by_id(&self, user_id: Uuid) -> Result<Option<User>, String> {
         self.repository.get_user_by_id(user_id).await
     }
 }

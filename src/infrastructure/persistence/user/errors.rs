@@ -5,6 +5,6 @@ pub enum UserPersistenceError {
     #[display("Duplicate user error for {email}")]
     DuplicateUserError { email: String },
 
-    #[display("Database error: {error}")]
-    DatabaseError { error: String },
+    #[display("Unexpected error: {message}")]
+    UnexpectedError { message: String },
 }

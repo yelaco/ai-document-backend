@@ -1,14 +1,17 @@
-use std::sync::Arc;
-
-use jsonwebtoken::{DecodingKey, EncodingKey};
+use base64::{Engine as _, engine::general_purpose::STANDARD};
+use chrono::{Duration, Utc};
+use jsonwebtoken::{DecodingKey, EncodingKey, Header, encode};
+use rand::RngCore;
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
+use uuid::Uuid;
 
 use crate::{
     application::auth::errors::AuthError,
     config::settings::Settings,
-    core::request_context::RequestContext,
+    core::{auth::Role, request_context::RequestContext},
     domain::{Auth, User},
-    infrastructure::auth::PasswordService,
+    infrastructure::{auth::PasswordService, persistence::user::errors::UserPersistenceError},
     interfaces::UserRepository,
 };
 
@@ -33,6 +36,7 @@ impl AuthService {
 
     pub async fn register_user(
         &self,
+        _ctx: RequestContext,
         email: &str,
         full_name: &str,
         password: &str,
@@ -47,11 +51,12 @@ impl AuthService {
             .await
             .map_err(|e| {
                 tracing::error!("Error creating user: {}", e);
-                AuthError::InternalError
-                // TODO: check for unique constraint violation
-                // AuthError::UserAlreadyExists {
-                //     email: email.to_string(),
-                // }
+                match e {
+                    UserPersistenceError::DuplicateUserError { email } => {
+                        AuthError::UserAlreadyExists { email }
+                    }
+                    _ => AuthError::InternalError,
+                }
             })?;
 
         let Some(user) = self
@@ -93,18 +98,73 @@ impl AuthService {
             .password_service
             .verify_password(password, &user.password_hash)
         {
+            let access_token = self
+                .create_access_token(&user.id, &user.email, &user.role)
+                .map_err(|e| {
+                    tracing::error!("Error creating access token: {}", e);
+                    AuthError::InternalError
+                })?;
+
+            // TODO: implement refresh token storage and management
+            let refresh_token = self.create_refresh_token();
+
             Ok(Auth {
-                access_token: "mock_token".to_string(),
-                refresh_token: "Bearer".to_string(),
+                access_token,
+                refresh_token,
             })
         } else {
             Err(AuthError::InvalidCredentials)
         }
     }
+
+    fn create_access_token(
+        &self,
+        user_id: &Uuid,
+        email: &str,
+        role: &Role,
+    ) -> Result<String, jsonwebtoken::errors::Error> {
+        let expiration = Utc::now()
+            .checked_add_signed(Duration::seconds(ACCESS_TOKEN_EXPIRY_SECONDS as i64))
+            .expect("time travel failed")
+            .timestamp() as usize;
+
+        let claims = Claims {
+            sub: user_id.to_string(),
+            exp: expiration,
+            iss: "ai-document-backend".to_string(),
+            email: email.to_string(),
+            role: role.to_string(),
+        };
+
+        let token = encode(&Header::default(), &claims, &self.encoding_key)?;
+
+        Ok(token)
+    }
+
+    fn create_refresh_token(&self) -> String {
+        let mut bytes = [0u8; 64];
+        rand::rng().fill_bytes(&mut bytes);
+        STANDARD.encode(bytes)
+    }
+
+    pub fn validate_access_token(
+        &self,
+        token: &str,
+    ) -> Result<Claims, jsonwebtoken::errors::Error> {
+        let token_data = jsonwebtoken::decode::<Claims>(
+            token,
+            &self.decoding_key,
+            &jsonwebtoken::Validation::default(),
+        )?;
+        Ok(token_data.claims)
+    }
 }
 
-#[derive(Serialize, Deserialize)]
-struct Claims {
-    sub: String,
-    exp: usize,
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Claims {
+    pub sub: String,
+    pub exp: usize,
+    pub iss: String,
+    pub role: String,
+    pub email: String,
 }
