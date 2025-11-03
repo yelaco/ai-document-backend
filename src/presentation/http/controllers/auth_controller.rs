@@ -1,32 +1,33 @@
-use crate::presentation::http::dtos::LoginRequest;
+use crate::application::auth::errors::AuthError;
+use crate::presentation::http::dtos::{LoginRequest, LoginResponse, RegisterRequest, UserResponse};
 use crate::{application::auth::AuthService, core::request_context::RequestContext};
-use actix_web::{HttpResponse, Responder, post, web};
+use actix_web::{HttpResponse, web};
 use tracing::instrument;
 
-// #[post("/register")]
-// async fn register(
-//     auth_service: web::Data<AuthService>,
-//     payload: web::Json<RegisterRequest>,
-// ) -> impl Responder {
-//     match auth_service
-//         .register_user(&payload.email, &payload.full_name, &payload.password)
-//         .await
-//     {
-//         Ok(user) => HttpResponse::Ok().json(user),
-//         Err(e) => HttpResponse::BadRequest().body(e),
-//     }
-// }
+#[instrument(name = "register", skip(ctx, auth_service, payload))]
+pub async fn register(
+    ctx: RequestContext,
+    auth_service: web::Data<AuthService>,
+    payload: web::Json<RegisterRequest>,
+) -> Result<HttpResponse, AuthError> {
+    tracing::info!(context = format!("{}", ctx));
+    let user = auth_service
+        .register_user(&payload.email, &payload.full_name, &payload.password)
+        .await?;
 
-#[post("/login")]
+    Ok(HttpResponse::Ok().json(UserResponse::from(user)))
+}
+
 #[instrument(name = "login", skip(ctx, auth_service, payload))]
-async fn login(
+pub async fn login(
     ctx: RequestContext,
     auth_service: web::Data<AuthService>,
     payload: web::Json<LoginRequest>,
-) -> impl Responder {
+) -> Result<HttpResponse, AuthError> {
     tracing::info!(context = format!("{}", ctx));
-    match auth_service.login_user(&payload.email, &payload.password).await {
-        Ok(auth) => HttpResponse::Ok().json(serde_json::json!({"access_token": auth.access_token, "refresh_token": auth.refresh_token})),
-        Err(e) => HttpResponse::Unauthorized().body(e),
-    }
+    let auth = auth_service
+        .login_user(ctx, &payload.email, &payload.password)
+        .await?;
+
+    Ok(HttpResponse::Ok().json(LoginResponse::from(auth)))
 }

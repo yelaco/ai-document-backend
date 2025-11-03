@@ -4,7 +4,9 @@ use jsonwebtoken::{DecodingKey, EncodingKey};
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    application::auth::errors::AuthError,
     config::settings::Settings,
+    core::request_context::RequestContext,
     domain::{Auth, User},
     infrastructure::auth::PasswordService,
     interfaces::UserRepository,
@@ -29,41 +31,74 @@ impl AuthService {
         }
     }
 
-    pub fn register_user(
-        &self,
-        _email: &str,
-        _full_name: &str,
-        _password: &str,
-    ) -> Result<User, String> {
-        // Registration logic to be implemented
-        unimplemented!()
-    }
-
-    pub async fn login_user(&self, _email: &str, _password: &str) -> Result<Auth, String> {
-        Ok(Auth {
-            access_token: "mock_token".to_string(),
-            refresh_token: "Bearer".to_string(),
-        })
-    }
-
-    pub async fn verify_basic_credentials(
+    pub async fn register_user(
         &self,
         email: &str,
+        full_name: &str,
         password: &str,
-    ) -> Result<Option<User>, String> {
-        let user = self.repository.get_user_by_email(email).await?;
+    ) -> Result<User, AuthError> {
+        let password_hash = self.password_service.hash_password(password).map_err(|e| {
+            tracing::error!("Error hashing password: {}", e);
+            AuthError::InternalError
+        })?;
 
-        let Some(user) = user else {
-            return Ok(None);
+        self.repository
+            .create_user(email, &password_hash, full_name)
+            .await
+            .map_err(|e| {
+                tracing::error!("Error creating user: {}", e);
+                AuthError::InternalError
+                // TODO: check for unique constraint violation
+                // AuthError::UserAlreadyExists {
+                //     email: email.to_string(),
+                // }
+            })?;
+
+        let Some(user) = self
+            .repository
+            .get_user_by_email(email)
+            .await
+            .map_err(|e| {
+                tracing::error!("Error fetching user by email: {}", e);
+                AuthError::InternalError
+            })?
+        else {
+            tracing::error!("New user not found");
+            return Err(AuthError::InternalError);
+        };
+
+        Ok(user)
+    }
+
+    pub async fn login_user(
+        &self,
+        ctx: RequestContext,
+        email: &str,
+        password: &str,
+    ) -> Result<Auth, AuthError> {
+        tracing::info!(context = format!("{}", ctx));
+        let Some(user) = self
+            .repository
+            .get_user_by_email(email)
+            .await
+            .map_err(|e| {
+                tracing::error!("Error fetching user by email: {}", e);
+                AuthError::InternalError
+            })?
+        else {
+            return Err(AuthError::UserNotFound);
         };
 
         if self
             .password_service
             .verify_password(password, &user.password_hash)
         {
-            Ok(Some(user))
+            Ok(Auth {
+                access_token: "mock_token".to_string(),
+                refresh_token: "Bearer".to_string(),
+            })
         } else {
-            Ok(None)
+            Err(AuthError::InvalidCredentials)
         }
     }
 }

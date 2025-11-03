@@ -1,6 +1,5 @@
 use actix_web::middleware::from_fn;
 use actix_web::{App, HttpServer, web};
-use actix_web_httpauth::middleware::HttpAuthentication;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use tracing_actix_web::TracingLogger;
@@ -47,12 +46,6 @@ async fn main() -> std::io::Result<()> {
                         .allow_any_header()
                         .max_age(3600),
                 )
-                .wrap(HttpAuthentication::basic(
-                    ai_document_backend::core::auth::basic_auth_validator,
-                ))
-                .wrap(HttpAuthentication::bearer(
-                    ai_document_backend::core::auth::jwt_auth_validator,
-                ))
                 .wrap(from_fn(attach_request_context))
                 .app_data(actix_web::web::Data::new(settings.clone()))
                 .app_data(web::Data::new(

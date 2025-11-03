@@ -1,5 +1,4 @@
 use actix_web::dev::ServiceResponse;
-use actix_web::error::ErrorUnauthorized;
 use actix_web::{Error, HttpMessage};
 use actix_web::{body::MessageBody, dev::ServiceRequest, middleware::Next};
 use uuid::Uuid;

@@ -2,11 +2,11 @@
 set shell := ["bash", "-c"]
 
 # Default recipe
-default: dev
+default: start
 
 # Run the app in dev mode with auto-reload
-dev:
-    cargo watch -x run
+watch:
+  bacon
 
 # Run the app normally (no watch)
 start:
@@ -29,6 +29,10 @@ migrate:
 new-migration name:
     sqlx migrate add {{name}}
 
+# Run SQLx prepare
+prepare:
+    cargo sqlx prepare
+
 # Build for release
 build:
     cargo build --release
@@ -39,8 +43,8 @@ docker-build:
 
 # Run docker-compose in dev mode
 docker-up:
-    docker compose -f compose.dev.yml --env-file .env.development up
+    docker-compose -f compose.dev.yml --env-file .env.development up
 
 # Stop docker containers
 docker-down:
-    docker compose -f compose.dev.yml --env-file .env.development down
+    docker-compose -f compose.dev.yml --env-file .env.development down

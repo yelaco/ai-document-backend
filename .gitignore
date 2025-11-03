@@ -44,5 +44,3 @@ pids
 *.pid
 *.seed
 *.pid.lock
-
-.sqlx
