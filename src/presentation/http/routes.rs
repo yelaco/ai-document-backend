@@ -8,9 +8,23 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         web::scope("/api")
             .service(
                 web::scope("/auth")
-                    .service(web::resource("/login").route(web::post().to(auth_controller::login)))
                     .service(
                         web::resource("/register").route(web::post().to(auth_controller::register)),
+                    )
+                    .service(web::resource("/login").route(web::post().to(auth_controller::login)))
+                    .service(
+                        web::resource("/logout")
+                            .wrap(HttpAuthentication::bearer(
+                                crate::core::auth::jwt_auth_validator,
+                            ))
+                            .route(web::post().to(auth_controller::logout)),
+                    )
+                    .service(
+                        web::resource("/refresh")
+                            .wrap(HttpAuthentication::bearer(
+                                crate::core::auth::jwt_auth_validator,
+                            ))
+                            .route(web::post().to(auth_controller::refresh)),
                     ),
             )
             .service(

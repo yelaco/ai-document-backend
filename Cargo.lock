@@ -20,6 +20,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-cookie"
+version = "0.1.0-alpha"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cb763913f3037f780ef6ae24ab315e61ec11bc2cc8d2719c3d1e84dbc641637"
+
+[[package]]
 name = "actix-cors"
 version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -234,6 +240,7 @@ dependencies = [
 name = "ai-document-backend"
 version = "0.1.0"
 dependencies = [
+ "actix-cookie",
  "actix-cors",
  "actix-web",
  "actix-web-httpauth",
@@ -456,6 +463,7 @@ dependencies = [
  "iana-time-zone",
  "js-sys",
  "num-traits",
+ "serde",
  "wasm-bindgen",
  "windows-link",
 ]

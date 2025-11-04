@@ -1,33 +1,43 @@
-use base64::{Engine as _, engine::general_purpose::STANDARD};
+use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{Duration, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, encode};
 use rand::RngCore;
-use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use uuid::Uuid;
 
 use crate::{
-    application::auth::errors::AuthError,
+    application::auth::{claims::Claims, errors::AuthError},
     config::settings::Settings,
     core::{auth::Role, request_context::RequestContext},
     domain::{Auth, User},
-    infrastructure::{auth::PasswordService, persistence::user::errors::UserPersistenceError},
-    interfaces::UserRepository,
+    infrastructure::{
+        auth::PasswordService,
+        persistence::{
+            refresh_token::errors::RefreshTokenPersistenceError, user::errors::UserPersistenceError,
+        },
+    },
+    interfaces::{RefreshTokenRepository, UserRepository},
 };
 
 pub const ACCESS_TOKEN_EXPIRY_SECONDS: usize = 3600; // 1 hour
 
 pub struct AuthService {
-    repository: Arc<dyn UserRepository>,
+    user_repository: Arc<dyn UserRepository>,
+    refresh_token_repository: Arc<dyn RefreshTokenRepository>,
     password_service: PasswordService,
     encoding_key: EncodingKey,
     decoding_key: DecodingKey,
 }
 
 impl AuthService {
-    pub fn new(repository: Arc<dyn UserRepository>, settings: Settings) -> Self {
+    pub fn new(
+        user_repository: Arc<dyn UserRepository>,
+        refresh_token_repository: Arc<dyn RefreshTokenRepository>,
+        settings: Settings,
+    ) -> Self {
         Self {
-            repository,
+            user_repository,
+            refresh_token_repository,
             password_service: PasswordService::new(),
             encoding_key: EncodingKey::from_secret(settings.auth.jwt_secret.as_ref()),
             decoding_key: DecodingKey::from_secret(settings.auth.jwt_secret.as_ref()),
@@ -46,7 +56,7 @@ impl AuthService {
             AuthError::InternalError
         })?;
 
-        self.repository
+        self.user_repository
             .create_user(email, &password_hash, full_name)
             .await
             .map_err(|e| {
@@ -60,7 +70,7 @@ impl AuthService {
             })?;
 
         let Some(user) = self
-            .repository
+            .user_repository
             .get_user_by_email(email)
             .await
             .map_err(|e| {
@@ -83,7 +93,7 @@ impl AuthService {
     ) -> Result<Auth, AuthError> {
         tracing::info!(context = format!("{}", ctx));
         let Some(user) = self
-            .repository
+            .user_repository
             .get_user_by_email(email)
             .await
             .map_err(|e| {
@@ -105,8 +115,96 @@ impl AuthService {
                     AuthError::InternalError
                 })?;
 
-            // TODO: implement refresh token storage and management
             let refresh_token = self.create_refresh_token();
+            let Ok(refresh_token_hash) = self.password_service.hash_password(&refresh_token) else {
+                tracing::error!("Error hashing refresh token");
+                return Err(AuthError::InternalError);
+            };
+            let new_expires_at = Utc::now()
+                .checked_add_signed(Duration::days(30))
+                .expect("time travel failed")
+                .timestamp();
+
+            self.refresh_token_repository
+                .store_refresh_token(user.id, &refresh_token_hash, new_expires_at)
+                .await
+                .map_err(|e| {
+                    tracing::error!("Error storing refresh token: {}", e);
+                    AuthError::InternalError
+                })?;
+
+            Ok(Auth {
+                access_token,
+                refresh_token,
+            })
+        } else {
+            Err(AuthError::InvalidCredentials)
+        }
+    }
+
+    pub async fn refresh_flow(
+        &self,
+        ctx: RequestContext,
+        refresh_token: &str,
+    ) -> Result<Auth, AuthError> {
+        let Some(user_id) = ctx.user_id else {
+            return Err(AuthError::InternalError);
+        };
+
+        let token_hash = self
+            .refresh_token_repository
+            .get_refresh_token_hash(user_id)
+            .await
+            .map_err(|e| {
+                tracing::error!("");
+                match e {
+                    RefreshTokenPersistenceError::TokenNotFound { user_id: _user_id } => {
+                        AuthError::TokenValidationError
+                    }
+                    _ => AuthError::InternalError,
+                }
+            })?;
+
+        if self
+            .password_service
+            .verify_password(refresh_token, &token_hash)
+        {
+            self.refresh_token_repository
+                .revoke_refresh_token(user_id)
+                .await
+                .map_err(|e| {
+                    tracing::error!("Error revoking refresh token: {}", e);
+                    AuthError::InternalError
+                })?;
+
+            let Ok(Some(user)) = self.user_repository.get_user_by_id(user_id).await else {
+                return Err(AuthError::UserNotFound);
+            };
+
+            let access_token = self
+                .create_access_token(&user.id, &user.email, &user.role)
+                .map_err(|e| {
+                    tracing::error!("Error creating access token: {}", e);
+                    AuthError::InternalError
+                })?;
+
+            let refresh_token = self.create_refresh_token();
+            let Ok(refresh_token_hash) = self.password_service.hash_password(&refresh_token) else {
+                tracing::error!("Error hashing refresh token");
+                return Err(AuthError::InternalError);
+            };
+            let new_expires_at = Utc::now()
+                .checked_add_signed(Duration::days(7))
+                .expect("time travel failed")
+                .timestamp();
+
+            self.refresh_token_repository
+                .store_refresh_token(user.id, &refresh_token_hash, new_expires_at)
+                .await
+                .map_err(|e| {
+                    tracing::error!("Error storing refresh token: {}", e);
+                    AuthError::InternalError
+                })?;
 
             Ok(Auth {
                 access_token,
@@ -144,27 +242,20 @@ impl AuthService {
     fn create_refresh_token(&self) -> String {
         let mut bytes = [0u8; 64];
         rand::rng().fill_bytes(&mut bytes);
-        STANDARD.encode(bytes)
+        URL_SAFE_NO_PAD.encode(bytes)
     }
 
     pub fn validate_access_token(
         &self,
         token: &str,
+        skip_exp_check: bool,
     ) -> Result<Claims, jsonwebtoken::errors::Error> {
-        let token_data = jsonwebtoken::decode::<Claims>(
-            token,
-            &self.decoding_key,
-            &jsonwebtoken::Validation::default(),
-        )?;
+        let mut validation = jsonwebtoken::Validation::default();
+        if skip_exp_check {
+            validation.validate_exp = false;
+        }
+
+        let token_data = jsonwebtoken::decode::<Claims>(token, &self.decoding_key, &validation)?;
         Ok(token_data.claims)
     }
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Claims {
-    pub sub: String,
-    pub exp: usize,
-    pub iss: String,
-    pub role: String,
-    pub email: String,
 }

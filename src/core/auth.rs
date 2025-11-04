@@ -2,17 +2,21 @@ use actix_web::Error;
 use actix_web::HttpMessage;
 use actix_web::dev::ServiceRequest;
 use actix_web::error::ErrorUnauthorized;
+use actix_web::web;
 use actix_web_httpauth::extractors::bearer::BearerAuth;
 use derive_more::derive::Display;
 use uuid::Uuid;
 
+use crate::application::auth::AuthService;
+
+#[derive(Debug)]
 pub struct AuthContext {
     pub user_id: Uuid,
     pub email: String,
     pub role: Role,
 }
 
-#[derive(Display)]
+#[derive(Display, Debug)]
 pub enum Role {
     #[display("admin")]
     Admin,
@@ -28,12 +32,18 @@ pub async fn jwt_auth_validator(
     let token = credentials.token();
 
     let auth_service = req
-        .app_data::<actix_web::web::Data<crate::application::auth::AuthService>>()
+        .app_data::<web::Data<AuthService>>()
         .expect("AuthService not found");
 
-    let Ok(claims) = auth_service.validate_access_token(token) else {
-        tracing::error!("Invalid JWT Token: {}", token);
-        return Err((actix_web::error::ErrorUnauthorized("Invalid token"), req));
+    // Skip expiry validation for refresh endpoint
+    let skip_expiry_validation = req.path().ends_with("/auth/refresh");
+
+    let claims = match auth_service.validate_access_token(token, skip_expiry_validation) {
+        Ok(claims) => claims,
+        Err(e) => {
+            tracing::error!("Invalid JWT Token: {}", e);
+            return Err((ErrorUnauthorized("Invalid token"), req));
+        }
     };
 
     // Extract auth info from claims

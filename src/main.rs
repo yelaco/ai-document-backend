@@ -5,7 +5,9 @@ use std::sync::Arc;
 use tracing_actix_web::TracingLogger;
 
 use ai_document_backend::application::user::UserService;
-use ai_document_backend::infrastructure::persistence::user::PostgresUserRepository;
+use ai_document_backend::infrastructure::persistence::{
+    refresh_token::PostgresRefreshTokenRepository, user::PostgresUserRepository,
+};
 use ai_document_backend::presentation::http::middleware::attach_request_context;
 use ai_document_backend::presentation::http::routes::configure as configure_http;
 
@@ -31,7 +33,8 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to run migrations");
 
-    let user_repo = Arc::new(PostgresUserRepository::new(pool));
+    let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
+    let refresh_token_repo = Arc::new(PostgresRefreshTokenRepository::new(pool.clone()));
 
     HttpServer::new({
         let settings = settings.clone();
@@ -51,6 +54,7 @@ async fn main() -> std::io::Result<()> {
                 .app_data(web::Data::new(
                     ai_document_backend::application::auth::AuthService::new(
                         user_repo.clone(),
+                        refresh_token_repo.clone(),
                         settings.clone(),
                     ),
                 ))

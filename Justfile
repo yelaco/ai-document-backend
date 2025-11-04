@@ -43,8 +43,8 @@ docker-build:
 
 # Run docker-compose in dev mode
 docker-up:
-    docker-compose -f compose.dev.yml --env-file .env.development up
+    docker-compose -f compose.dev.yml --env-file .env up
 
 # Stop docker containers
 docker-down:
-    docker-compose -f compose.dev.yml --env-file .env.development down
+    docker-compose -f compose.dev.yml --env-file .env down
