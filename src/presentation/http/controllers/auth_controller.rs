@@ -12,7 +12,7 @@ pub async fn register(
     payload: web::Json<RegisterRequest>,
 ) -> Result<HttpResponse, AuthError> {
     let user = auth_service
-        .register_user(ctx, &payload.email, &payload.full_name, &payload.password)
+        .register_user(&ctx, &payload.email, &payload.full_name, &payload.password)
         .await?;
 
     Ok(HttpResponse::Ok().json(UserResponse::from(user)))
@@ -25,7 +25,7 @@ pub async fn login(
     payload: web::Json<LoginRequest>,
 ) -> Result<HttpResponse, AuthError> {
     let auth = auth_service
-        .login_user(ctx, &payload.email, &payload.password)
+        .login_user(&ctx, &payload.email, &payload.password)
         .await?;
 
     let refresh_cookie = create_refresh_cookie(&auth.refresh_token);
@@ -52,7 +52,7 @@ pub async fn refresh(
     };
 
     let refresh_token = refresh_cookie.value();
-    let auth = auth_service.refresh_flow(ctx, refresh_token).await?;
+    let auth = auth_service.refresh_flow(&ctx, refresh_token).await?;
 
     let refresh_cookie = create_refresh_cookie(&auth.refresh_token);
 

@@ -6,7 +6,6 @@ pub struct Chat {
     pub title: Option<String>,
     pub document_id: Uuid,
     pub user_id: Uuid,
-    pub messages: Vec<Uuid>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }

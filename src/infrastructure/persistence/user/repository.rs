@@ -29,8 +29,8 @@ impl UserRepository for PostgresUserRepository {
             .pool
             .execute(sqlx::query!(
                 r#"
-            INSERT INTO users (email, password_hash, full_name)
-            VALUES ($1, $2, $3)
+                INSERT INTO users (email, password_hash, full_name)
+                VALUES ($1, $2, $3)
                 "#,
                 email,
                 password_hash,
@@ -63,7 +63,7 @@ impl UserRepository for PostgresUserRepository {
         let user = sqlx::query_as!(
             UserRow,
             r#"
-                SELECT id, email, password_hash, full_name, created_at, updated_at
+            SELECT id, email, password_hash, full_name, created_at, updated_at
             FROM users
             WHERE email = $1
             "#,

@@ -1,16 +1,15 @@
 use crate::presentation::http::dtos::UserResponse;
 use crate::{application::user::UserService, core::request_context::RequestContext};
-use actix_web::{HttpResponse, Responder, get, web};
+use actix_web::{HttpResponse, Responder, web};
 use uuid::Uuid;
 
-#[get("/{id}")]
 #[tracing::instrument(name = "Get user by id", skip(service))]
 pub async fn get_user(
     ctx: RequestContext,
     service: web::Data<UserService>,
     id: web::Path<Uuid>,
 ) -> impl Responder {
-    match service.get_user_by_id(id.into_inner()).await {
+    match service.get_user_by_id(&ctx, id.into_inner()).await {
         Ok(Some(user)) => HttpResponse::Ok().json(UserResponse::from(user)),
         Ok(None) => HttpResponse::NotFound().body("User not found"),
         Err(err) => {
@@ -26,7 +25,7 @@ pub async fn get_me(ctx: RequestContext, service: web::Data<UserService>) -> imp
         return HttpResponse::Unauthorized().body("Unauthorized");
     };
 
-    match service.get_user_by_id(user_id).await {
+    match service.get_user_by_id(&ctx, user_id).await {
         Ok(Some(user)) => HttpResponse::Ok().json(UserResponse::from(user)),
         Ok(None) => HttpResponse::NotFound().body("User not found"),
         Err(err) => {

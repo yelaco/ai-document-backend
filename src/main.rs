@@ -1,5 +1,8 @@
 use actix_web::middleware::from_fn;
 use actix_web::{App, HttpServer, web};
+use ai_document_backend::application::auth::AuthService;
+use ai_document_backend::application::document::DocumentService;
+use ai_document_backend::infrastructure::persistence::document::PostgresDocumentRepository;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use tracing_actix_web::TracingLogger;
@@ -35,6 +38,7 @@ async fn main() -> std::io::Result<()> {
 
     let user_repo = Arc::new(PostgresUserRepository::new(pool.clone()));
     let refresh_token_repo = Arc::new(PostgresRefreshTokenRepository::new(pool.clone()));
+    let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
 
     HttpServer::new({
         let settings = settings.clone();
@@ -51,14 +55,13 @@ async fn main() -> std::io::Result<()> {
                 )
                 .wrap(from_fn(attach_request_context))
                 .app_data(actix_web::web::Data::new(settings.clone()))
-                .app_data(web::Data::new(
-                    ai_document_backend::application::auth::AuthService::new(
-                        user_repo.clone(),
-                        refresh_token_repo.clone(),
-                        settings.clone(),
-                    ),
-                ))
+                .app_data(web::Data::new(AuthService::new(
+                    user_repo.clone(),
+                    refresh_token_repo.clone(),
+                    settings.clone(),
+                )))
                 .app_data(web::Data::new(UserService::new(user_repo.clone())))
+                .app_data(web::Data::new(DocumentService::new(document_repo.clone())))
                 .configure(configure_http)
         }
     })

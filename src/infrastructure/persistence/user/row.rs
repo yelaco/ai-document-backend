@@ -23,8 +23,6 @@ impl From<UserRow> for User {
             full_name: row.full_name,
             created_at: row.created_at,
             updated_at: row.updated_at,
-            documents: vec![],
-            chats: vec![],
             role: Role::User,
         }
     }

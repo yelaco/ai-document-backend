@@ -46,7 +46,7 @@ impl AuthService {
 
     pub async fn register_user(
         &self,
-        _ctx: RequestContext,
+        _ctx: &RequestContext,
         email: &str,
         full_name: &str,
         password: &str,
@@ -87,7 +87,7 @@ impl AuthService {
 
     pub async fn login_user(
         &self,
-        ctx: RequestContext,
+        ctx: &RequestContext,
         email: &str,
         password: &str,
     ) -> Result<Auth, AuthError> {
@@ -144,12 +144,10 @@ impl AuthService {
 
     pub async fn refresh_flow(
         &self,
-        ctx: RequestContext,
+        ctx: &RequestContext,
         refresh_token: &str,
     ) -> Result<Auth, AuthError> {
-        let Some(user_id) = ctx.user_id else {
-            return Err(AuthError::InternalError);
-        };
+        let user_id = ctx.user_id.ok_or(AuthError::InternalError)?;
 
         let token_hash = self
             .refresh_token_repository

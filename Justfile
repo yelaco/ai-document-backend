@@ -25,6 +25,9 @@ fmt:
 migrate:
     sqlx migrate run
 
+migrate-down-one:
+    sqlx migrate revert
+
 # Create a new migration: just new-migration name="add_users"
 new-migration name:
     sqlx migrate add {{name}}
