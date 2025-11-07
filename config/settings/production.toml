@@ -2,9 +2,10 @@
 url = "postgres://aidocument:password@db:5432/aidocument_prod"
 max_connections = 20
 
-[vector_database]
-host = "vector_db"
-port = 19530
+[qdrant]
+host = "qdrant"
+http_port = 6333
+grpc_port = 6334
 
 [redis]
 host = "redis"

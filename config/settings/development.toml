@@ -1,9 +1,10 @@
 [database]
 url = "postgres://aidocument:password@localhost:5432/aidocument_dev"
 
-[vector_database]
-host = "vector_db"
-port = 19530
+[qdrant]
+host = "localhost"
+http_port = 6333
+grpc_port = 6334
 
 [redis]
 host = "redis"

@@ -1,20 +1,25 @@
+use std::sync::Arc;
+
 use actix_multipart::Multipart;
 use actix_web::{HttpResponse, web};
 use futures::TryStreamExt;
 use sanitize_filename::sanitize;
+use tokio::sync::Mutex;
 use tracing::instrument;
 
 use crate::application::document::DocumentService;
 use crate::application::document::errors::DocumentError;
+use crate::application::embedding::EmbeddingService;
 use crate::core::request_context::RequestContext;
 use crate::presentation::http::dtos::{
     DocumentResponse, ListDocumentsRequest, PaginationMetadata, PaginationResponse,
 };
 
-#[tracing::instrument(name = "upload", skip(document_service, payload))]
+#[tracing::instrument(name = "upload", skip(document_service, embedding_service, payload))]
 pub async fn upload(
     ctx: RequestContext,
     document_service: web::Data<DocumentService>,
+    embedding_service: web::Data<Arc<Mutex<EmbeddingService>>>,
     mut payload: Multipart,
 ) -> Result<HttpResponse, DocumentError> {
     let mut documents = Vec::new();
@@ -38,9 +43,20 @@ pub async fn upload(
 
         let document = document_service.create_document(&ctx, filename).await?;
 
-        document_service
+        let document_content_stream = document_service
             .process_document(&ctx, field, document.id)
             .await?;
+
+        // TODO: use a background task for embedding
+        embedding_service
+            .lock()
+            .await
+            .embed_document(document.id, document_content_stream)
+            .await
+            .map_err(|e| {
+                tracing::error!("Error embedding document: {}", e);
+                DocumentError::InternalError
+            })?;
 
         documents.push(document);
     }

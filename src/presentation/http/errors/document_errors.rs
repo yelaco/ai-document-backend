@@ -10,6 +10,8 @@ impl ResponseError for DocumentError {
             DocumentError::DocumentNotFound => StatusCode::NOT_FOUND,
             DocumentError::InvalidCredentials => StatusCode::UNAUTHORIZED,
             DocumentError::FileUploadError { message: _message } => StatusCode::BAD_REQUEST,
+            DocumentError::Io { message: _message } => StatusCode::INTERNAL_SERVER_ERROR,
+            DocumentError::LineTooLong => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 

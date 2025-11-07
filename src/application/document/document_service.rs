@@ -1,6 +1,10 @@
-use futures::TryStream;
-use futures_util::TryStreamExt;
+use bytes::Buf;
+use futures::{Stream, TryStream, TryStreamExt, stream};
 use std::sync::Arc;
+use tokio_util::{
+    codec::{FramedRead, LinesCodec},
+    io::StreamReader,
+};
 use uuid::Uuid;
 
 use crate::{
@@ -22,23 +26,41 @@ impl DocumentService {
     pub async fn process_document<S, B, E>(
         &self,
         _ctx: &RequestContext,
-        mut stream: S,
+        mut stream: S, // The incoming byte stream (your 'field')
         document_id: Uuid,
-    ) -> Result<(), DocumentError>
+    ) -> Result<impl Stream<Item = Result<String, DocumentError>>, DocumentError>
     where
         S: TryStream<Ok = B, Error = E> + Unpin,
-        B: AsRef<[u8]>,
+        B: Buf,
         E: Into<DocumentError>,
     {
-        println!("Processing document with ID: {}", document_id);
-
+        // --- 1. Consume the entire byte stream into a Vec<u8> ---
+        let mut body = Vec::new();
         while let Some(chunk) = stream.try_next().await.map_err(Into::into)? {
-            let data = chunk.as_ref();
-            // Process the chunk (e.g., save to storage, analyze content, etc.)
-            println!("Processing chunk of size: {}", data.len());
+            body.extend_from_slice(chunk.chunk());
         }
 
-        Ok(())
+        // --- 2. Parse the PDF bytes from memory ---
+        let extracted_text = match pdf_extract::extract_text_from_mem(&body) {
+            Ok(text) => text,
+            Err(e) => {
+                tracing::error!("Failed to parse PDF: {}", e);
+                // You might want a specific error here, like DocumentError::PdfParseFailed
+                return Err(DocumentError::InternalError);
+            }
+        };
+
+        // --- 3. Split the extracted text into lines ---
+        // The embedding service expects a Vec<String> (lines)
+        // TODO: curerntly we are just putting the entire text as a single part.
+        // implement stream later
+        let parts: Vec<String> = vec![extracted_text];
+
+        // --- 4. Return a new stream from the Vec<String> ---
+        // We wrap each String in a Result to match the required output signature
+        let output_stream = stream::iter(parts.into_iter().map(Ok));
+
+        Ok(output_stream)
     }
 
     pub async fn create_document(

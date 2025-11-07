@@ -19,10 +19,10 @@ impl AppEnv {
 pub struct Settings {
     pub app_name: String,
     pub app_env: AppEnv,
-    pub port: u16,
+    pub app_port: u16,
     pub auth: AuthSettings,
     pub database: DatabaseSettings,
-    pub vector_database: VectorDatabaseSettings,
+    pub qdrant: QdrantSettings,
     pub redis: RedisSettings,
     pub ai: AiSettings,
 }
@@ -39,9 +39,10 @@ pub struct DatabaseSettings {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct VectorDatabaseSettings {
+pub struct QdrantSettings {
     pub host: String,
-    pub port: u16,
+    pub http_port: u16,
+    pub grpc_port: u16,
 }
 
 #[derive(Debug, Deserialize, Clone)]

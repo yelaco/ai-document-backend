@@ -2,9 +2,13 @@ use actix_web::middleware::from_fn;
 use actix_web::{App, HttpServer, web};
 use ai_document_backend::application::auth::AuthService;
 use ai_document_backend::application::document::DocumentService;
+use ai_document_backend::application::embedding::EmbeddingService;
 use ai_document_backend::infrastructure::persistence::document::PostgresDocumentRepository;
+use qdrant_client::Qdrant;
+use qdrant_client::qdrant::{CreateCollectionBuilder, Distance, VectorParamsBuilder};
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use tracing_actix_web::TracingLogger;
 
 use ai_document_backend::application::user::UserService;
@@ -40,6 +44,33 @@ async fn main() -> std::io::Result<()> {
     let refresh_token_repo = Arc::new(PostgresRefreshTokenRepository::new(pool.clone()));
     let document_repo = Arc::new(PostgresDocumentRepository::new(pool.clone()));
 
+    let qdrant_client = Arc::new({
+        let qdrant_url = format!(
+            "http://{}:{}",
+            settings.qdrant.host, settings.qdrant.grpc_port
+        );
+        let client = Qdrant::from_url(&qdrant_url)
+            .build()
+            .expect("Failed to create Qdrant client");
+
+        client
+            .health_check()
+            .await
+            .expect("Failed to connect to Qdrant");
+
+        let _ = client
+            .create_collection(
+                CreateCollectionBuilder::new("documents")
+                    .vectors_config(VectorParamsBuilder::new(768, Distance::Cosine)),
+            )
+            .await
+            .inspect_err(|e| {
+                tracing::warn!("Failed to create Qdrant collection: {}", e);
+            });
+
+        client
+    });
+
     HttpServer::new({
         let settings = settings.clone();
 
@@ -62,10 +93,13 @@ async fn main() -> std::io::Result<()> {
                 )))
                 .app_data(web::Data::new(UserService::new(user_repo.clone())))
                 .app_data(web::Data::new(DocumentService::new(document_repo.clone())))
+                .app_data(web::Data::new(Arc::new(Mutex::new(EmbeddingService::new(
+                    qdrant_client.clone(),
+                )))))
                 .configure(configure_http)
         }
     })
-    .bind(("0.0.0.0", settings.port))?
+    .bind(("0.0.0.0", settings.app_port))?
     .run()
     .await
 }
