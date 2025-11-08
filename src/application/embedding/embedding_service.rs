@@ -20,6 +20,22 @@ impl EmbeddingService {
         Self { qdrant_client }
     }
 
+    pub async fn embed_texts(&self, texts: Vec<String>) -> Result<Vec<Vec<f32>>, EmbeddingError> {
+        let mut embedder = TextEmbedding::try_new(
+            InitOptions::new(EmbeddingModel::MultilingualE5Base)
+                .with_show_download_progress(true)
+                .with_max_length(768),
+        )
+        .expect("Failed to create embedder");
+
+        let embeddings = embedder.embed(texts, None).map_err(|e| {
+            tracing::error!("Error generating embeddings: {}", e);
+            EmbeddingError::InternalError
+        })?;
+
+        Ok(embeddings)
+    }
+
     pub async fn embed_document<S>(
         &self,
         document_id: Uuid,
@@ -89,5 +105,12 @@ impl EmbeddingService {
         }
 
         Ok(())
+    }
+
+    pub async fn delete_document_embeddings(
+        &self,
+        _document_id: Uuid,
+    ) -> Result<(), EmbeddingError> {
+        unimplemented!()
     }
 }

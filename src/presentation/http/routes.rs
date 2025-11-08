@@ -63,6 +63,11 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
                         web::resource("")
                             .route(web::get().to(document_controller::get_paginated_documents))
                             .route(web::post().to(document_controller::upload)),
+                    )
+                    .service(
+                        web::resource("/{id}")
+                            .route(web::get().to(document_controller::get_document))
+                            .route(web::delete().to(document_controller::delete_document)),
                     ),
             ),
     );

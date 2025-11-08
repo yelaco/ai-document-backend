@@ -1,10 +1,6 @@
 use bytes::Buf;
 use futures::{Stream, TryStream, TryStreamExt, stream};
 use std::sync::Arc;
-use tokio_util::{
-    codec::{FramedRead, LinesCodec},
-    io::StreamReader,
-};
 use uuid::Uuid;
 
 use crate::{
@@ -27,7 +23,6 @@ impl DocumentService {
         &self,
         _ctx: &RequestContext,
         mut stream: S, // The incoming byte stream (your 'field')
-        document_id: Uuid,
     ) -> Result<impl Stream<Item = Result<String, DocumentError>>, DocumentError>
     where
         S: TryStream<Ok = B, Error = E> + Unpin,
@@ -100,5 +95,43 @@ impl DocumentService {
             })?;
 
         Ok(documents)
+    }
+
+    pub async fn get_document_by_id(
+        &self,
+        ctx: &RequestContext,
+        document_id: Uuid,
+    ) -> Result<Document, DocumentError> {
+        let user_id = ctx.user_id.ok_or(DocumentError::InvalidCredentials)?;
+
+        let document = self
+            .document_repository
+            .get_document_by_id_and_user_id(document_id, user_id)
+            .await
+            .map_err(|e| {
+                tracing::error!("Error fetching document: {}", e);
+                DocumentError::InternalError
+            })?
+            .ok_or(DocumentError::DocumentNotFound)?;
+
+        Ok(document)
+    }
+
+    pub async fn delete_document_by_id(
+        &self,
+        ctx: &RequestContext,
+        document_id: Uuid,
+    ) -> Result<(), DocumentError> {
+        let user_id = ctx.user_id.ok_or(DocumentError::InvalidCredentials)?;
+
+        self.document_repository
+            .delete_document_by_id_and_user_id(document_id, user_id)
+            .await
+            .map_err(|e| {
+                tracing::error!("Error deleting document: {}", e);
+                DocumentError::InternalError
+            })?;
+
+        Ok(())
     }
 }

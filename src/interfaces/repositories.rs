@@ -49,9 +49,10 @@ pub trait DocumentRepository: Send + Sync {
         user_id: Uuid,
     ) -> Result<Document, DocumentPersistenceError>;
 
-    async fn get_document_by_id(
+    async fn get_document_by_id_and_user_id(
         &self,
         document_id: Uuid,
+        user_id: Uuid,
     ) -> Result<Option<Document>, DocumentPersistenceError>;
 
     async fn get_paginated_documents_by_user_id(
@@ -60,4 +61,10 @@ pub trait DocumentRepository: Send + Sync {
         page: u32,
         page_size: u32,
     ) -> Result<Vec<Document>, DocumentPersistenceError>;
+
+    async fn delete_document_by_id_and_user_id(
+        &self,
+        document_id: Uuid,
+        user_id: Uuid,
+    ) -> Result<(), DocumentPersistenceError>;
 }

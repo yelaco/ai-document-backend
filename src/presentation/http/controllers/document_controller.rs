@@ -6,6 +6,7 @@ use futures::TryStreamExt;
 use sanitize_filename::sanitize;
 use tokio::sync::Mutex;
 use tracing::instrument;
+use uuid::Uuid;
 
 use crate::application::document::DocumentService;
 use crate::application::document::errors::DocumentError;
@@ -43,9 +44,7 @@ pub async fn upload(
 
         let document = document_service.create_document(&ctx, filename).await?;
 
-        let document_content_stream = document_service
-            .process_document(&ctx, field, document.id)
-            .await?;
+        let document_content_stream = document_service.process_document(&ctx, field).await?;
 
         // TODO: use a background task for embedding
         embedding_service
@@ -93,4 +92,41 @@ pub async fn get_paginated_documents(
             current_page,
         },
     )))
+}
+
+#[instrument(name = "get_document", skip(document_service))]
+pub async fn get_document(
+    ctx: RequestContext,
+    document_service: web::Data<DocumentService>,
+    document_id: web::Path<Uuid>,
+) -> Result<HttpResponse, DocumentError> {
+    let document = document_service
+        .get_document_by_id(&ctx, document_id.into_inner())
+        .await?;
+
+    Ok(HttpResponse::Ok().json(DocumentResponse::from(document)))
+}
+
+#[instrument(name = "delete_document", skip(document_service, embedding_service))]
+pub async fn delete_document(
+    ctx: RequestContext,
+    document_service: web::Data<DocumentService>,
+    embedding_service: web::Data<Arc<Mutex<EmbeddingService>>>,
+    document_id: web::Path<Uuid>,
+) -> Result<HttpResponse, DocumentError> {
+    let document_id = document_id.into_inner();
+    document_service
+        .delete_document_by_id(&ctx, document_id)
+        .await?;
+
+    let _ = embedding_service
+        .lock()
+        .await
+        .delete_document_embeddings(document_id)
+        .await
+        .inspect_err(|e| {
+            tracing::error!("Error deleting document embeddings: {}", e);
+        });
+
+    Ok(HttpResponse::NoContent().finish())
 }

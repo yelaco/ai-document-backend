@@ -3,6 +3,8 @@ use actix_web::{App, HttpServer, web};
 use ai_document_backend::application::auth::AuthService;
 use ai_document_backend::application::document::DocumentService;
 use ai_document_backend::application::embedding::EmbeddingService;
+use ai_document_backend::application::rag::RagService;
+use ai_document_backend::config::settings::AppEnv;
 use ai_document_backend::infrastructure::persistence::document::PostgresDocumentRepository;
 use qdrant_client::Qdrant;
 use qdrant_client::qdrant::{CreateCollectionBuilder, Distance, VectorParamsBuilder};
@@ -18,16 +20,18 @@ use ai_document_backend::infrastructure::persistence::{
 use ai_document_backend::presentation::http::middleware::attach_request_context;
 use ai_document_backend::presentation::http::routes::configure as configure_http;
 
-fn init_tracing() {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .init();
+fn init_tracing(app_env: &AppEnv) {
+    let max_level = match app_env {
+        AppEnv::Production => tracing::Level::INFO,
+        _ => tracing::Level::DEBUG,
+    };
+    tracing_subscriber::fmt().with_max_level(max_level).init();
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    init_tracing();
     let settings = ai_document_backend::config::load().expect("Failed to load configuration");
+    init_tracing(&settings.app_env);
 
     let pool = PgPoolOptions::new()
         .max_connections(settings.database.max_connections)
@@ -65,7 +69,7 @@ async fn main() -> std::io::Result<()> {
             )
             .await
             .inspect_err(|e| {
-                tracing::warn!("Failed to create Qdrant collection: {}", e);
+                tracing::debug!("Failed to create Qdrant collection: {}", e);
             });
 
         client
@@ -96,6 +100,7 @@ async fn main() -> std::io::Result<()> {
                 .app_data(web::Data::new(Arc::new(Mutex::new(EmbeddingService::new(
                     qdrant_client.clone(),
                 )))))
+                .app_data(web::Data::new(RagService::new(qdrant_client.clone())))
                 .configure(configure_http)
         }
     })

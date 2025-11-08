@@ -32,6 +32,18 @@ impl From<&Document> for DocumentResponse {
     }
 }
 
+impl From<Document> for DocumentResponse {
+    fn from(doc: Document) -> Self {
+        Self {
+            id: doc.id.to_string(),
+            title: doc.title,
+            user_id: doc.user_id.to_string(),
+            created_at: doc.created_at.to_rfc3339(),
+            updated_at: doc.updated_at.to_rfc3339(),
+        }
+    }
+}
+
 impl PaginationResponse<DocumentResponse> {
     pub fn from(documents: Vec<Document>, metadata: PaginationMetadata) -> Self {
         let items = documents
