@@ -1,0 +1,58 @@
+version: "3"
+
+vars:
+  BINARY_NAME: server
+  PKG: ./cmd/server/main.go
+
+tasks:
+  setup:
+    desc: Setup the project
+    cmds:
+      - go mod tidy
+      - go mod tidy -modfile=go.tool.mod
+
+  upgrade:
+    desc: Upgrade dependencies or tools (use `task upgrade -- tool`)
+    cmds:
+      - |
+        if [ "{{.CLI_ARGS}}" = "tool" ]; then
+          go get -modfile=go.tool.mod tool
+        else
+          go tool -modfile=go.tool.mod go-mod-upgrade
+        fi
+
+  build:
+    desc: Build the project
+    cmds:
+      - go build -o {{.BINARY_NAME}} {{.PKG}}
+
+  test:
+    desc: Run tests
+    cmds:
+      - go test -v ./test/
+
+  clean:
+    desc: Clean build artifacts
+    cmds:
+      - rm -f {{.BINARY_NAME}}
+
+  lint:
+    desc: Run linter
+    cmds:
+      - go tool -modfile=go.tool.mod golangci-lint run
+
+  run:
+    desc: Build and run the application
+    deps: [build]
+    cmds:
+      - ./{{.BINARY_NAME}}
+      - task: clean
+
+  debug:
+    desc: Debug the application
+    cmds:
+      - go run {{.PKG}}
+
+  sqlc:
+    cmds:
+      - go tool -modfile=go.tool.mod sqlc generate

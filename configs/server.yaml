@@ -1,0 +1,10 @@
+app:
+  env: dev
+  host: localhost
+  port: "7202"
+
+database:
+  name: postgres
+  host: localhost
+  user: postgres
+  password: password
