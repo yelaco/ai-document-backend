@@ -1,12 +1,12 @@
 version: "2"
 sql:
   - schema: "migrations/"
-    queries: "internal/infrastructure/database/queries/"
+    queries: "internal/infrastructure/persistence/database/queries/"
     engine: "postgresql"
     gen:
       go:
-        package: "database"
-        out: "internal/infrastructure/database/sqlc"
+        package: "sqlc"
+        out: "internal/infrastructure/persistence/database/sqlc"
         sql_package: "pgx/v5"
         emit_empty_slices: true
         emit_interface: true
