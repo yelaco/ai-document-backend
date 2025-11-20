@@ -15,11 +15,6 @@ func NewUserHandler(logger *zap.Logger) *UserHandler {
 	}
 }
 
-func (h *UserHandler) CreateUser(c *gin.Context) {
-	h.logger.Info("CreateUser called")
-	// Implementation goes here
-}
-
 func (h *UserHandler) GetUserByID(c *gin.Context) {
 	h.logger.Info("GetUserByID called")
 	// Implementation goes here

@@ -4,7 +4,8 @@ app:
   port: "7202"
 
 database:
-  name: postgres
+  name: aidocument
   host: localhost
-  user: postgres
+  port: "5432"
+  user: aidocument
   password: password

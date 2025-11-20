@@ -15,13 +15,22 @@ const (
 )
 
 type Config struct {
-	AppEnv AppEnv `mapstructure:"app.env"`
-	Host   string `mapstructure:"app.host"`
-	Port   string `mapstructure:"app.port"`
-	DBName string `mapstructure:"database.name"`
-	DBHost string `mapstructure:"database.host"`
-	DBUser string `mapstructure:"database.user"`
-	DBPass string `mapstructure:"database.password"`
+	App      AppConfig      `mapstructure:"app"`
+	Database DatabaseConfig `mapstructure:"database"`
+}
+
+type AppConfig struct {
+	Env  AppEnv `mapstructure:"env"`
+	Host string `mapstructure:"host"`
+	Port string `mapstructure:"port"`
+}
+
+type DatabaseConfig struct {
+	Name     string `mapstructure:"name"`
+	Host     string `mapstructure:"host"`
+	Port     string `mapstructure:"port"`
+	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
 }
 
 // MustLoadConfig reads configurations from file or environment variables

@@ -2,17 +2,17 @@ package main
 
 import (
 	"context"
-	"errors"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+	"fmt"
 
-	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/yelaco/ai-document-backend/internal/application/auth"
 	"github.com/yelaco/ai-document-backend/internal/config"
+	authInfra "github.com/yelaco/ai-document-backend/internal/infrastructure/auth"
+	"github.com/yelaco/ai-document-backend/internal/infrastructure/persistence/repositories"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest"
+	"github.com/yelaco/ai-document-backend/internal/presentation/rest/handlers"
 	"github.com/yelaco/ai-document-backend/pkg/logger"
+	"github.com/yelaco/ai-document-backend/pkg/server"
 	"go.uber.org/zap"
 )
 
@@ -21,45 +21,40 @@ func main() {
 	cfg := config.MustLoadConfig("./configs")
 
 	// setup logger
-	logger := logger.NewLogger(cfg.AppEnv)
+	logger := logger.NewLogger(cfg.App.Env)
 	defer logger.Sync()
 
+	ctx := context.Background()
+
+	// setup database connection
+	connPool, err := pgxpool.New(ctx, fmt.Sprintf("postgresql://%s:%s@%s:%s/%s",
+		cfg.Database.User,
+		cfg.Database.Password,
+		cfg.Database.Host,
+		cfg.Database.Port,
+		cfg.Database.Name,
+	))
+	if err != nil {
+		logger.Fatal("failed to create connection pool:", zap.Error(err))
+	}
+	if err := connPool.Ping(ctx); err != nil {
+		logger.Fatal("failed to ping database:", zap.Error(err))
+	}
+
+	// inject dependencies
+	userRepo := repositories.NewPostgresUserRepository(connPool)
+	refreshTokenRepo := repositories.NewRefreshTokenRepository(connPool)
+	passwordHasher := authInfra.NewArgon2PasswordHasher()
+	authService := auth.NewAuthService(userRepo, refreshTokenRepo, passwordHasher)
+	userHandler := handlers.NewUserHandler(logger)
+	authHandler := handlers.NewAuthHandler(logger, authService)
+
 	// setup router
-	engine := gin.New()
-	router := rest.NewRouter(logger, engine)
-	router.SetupRoutes()
+	router := rest.NewRouter(logger)
+	router.SetupRoutes(userHandler, authHandler)
 
 	// start server
-	srv := &http.Server{
-		Addr:    cfg.Host + ":" + cfg.Port,
-		Handler: router.GetHandler(),
-	}
-
-	go func() {
-		// service connections
-		logger.Info("Server starting", zap.String("addr", cfg.Host+":"+cfg.Port))
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Fatal("Listen error", zap.Error(err))
-		}
-	}()
-
-	// Wait for interrupt signal to gracefully shut down the server with
-	// a timeout of 30 seconds.
-	quit := make(chan os.Signal, 1)
-	// kill (no param) default send syscall.SIGTERM
-	// kill -2 is syscall.SIGINT
-	// kill -9 is syscall. SIGKILL but can't be caught, so don't need to add it
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-	logger.Info("Shutdown signal received")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer func() {
-		cancel()
-	}()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		logger.Fatal("Server shutdown failed", zap.Error(err))
-	}
-	logger.Info("Server exited gracefully")
+	addr := fmt.Sprintf("%s:%s", cfg.App.Host, cfg.App.Port)
+	server := server.NewServer(logger, addr, router)
+	server.Start()
 }

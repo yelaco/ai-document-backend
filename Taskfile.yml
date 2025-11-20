@@ -26,6 +26,11 @@ tasks:
     cmds:
       - go build -o {{.BINARY_NAME}} {{.PKG}}
 
+  build-release-linux:
+    desc: Build the project for production
+    cmds:
+      - CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o {{.BINARY_NAME}} {{.PKG}}
+
   test:
     desc: Run tests
     cmds:
@@ -44,6 +49,7 @@ tasks:
   run:
     desc: Build and run the application
     deps: [build]
+    ignore_error: true
     cmds:
       - ./{{.BINARY_NAME}}
       - task: clean
