@@ -1,8 +1,8 @@
 package auth
 
-type Role int
+type Role string
 
 const (
-	RoleUser Role = iota
-	RoleAdmin
+	RoleUser  Role = "user"
+	RoleAdmin Role = "admin"
 )

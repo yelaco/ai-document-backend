@@ -13,7 +13,7 @@ type AuthHandler struct {
 
 func NewAuthHandler(logger *zap.Logger, authService interfaces.AuthService) *AuthHandler {
 	return &AuthHandler{
-		logger:      logger,
+		logger:      logger.With(zap.String("presentation", "AuthHandler")),
 		authService: authService,
 	}
 }

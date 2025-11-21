@@ -7,7 +7,7 @@ import (
 )
 
 type RefreshTokenRepository interface {
-	StoreRefreshToken(refreshToken string, userID uuid.UUID, expiredsAt time.Duration) error
+	StoreRefreshToken(refreshToken string, userID uuid.UUID, expiredsAt time.Time) error
 	GetRefreshTokenHash(userID uuid.UUID) (string, error)
 	RevokeRefreshToken(userID uuid.UUID) error
 	DeleteRefreshToken(userID uuid.UUID) error

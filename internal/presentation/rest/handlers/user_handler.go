@@ -11,7 +11,7 @@ type UserHandler struct {
 
 func NewUserHandler(logger *zap.Logger) *UserHandler {
 	return &UserHandler{
-		logger: logger,
+		logger: logger.With(zap.String("handler", "UserHandler")),
 	}
 }
 

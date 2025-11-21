@@ -33,6 +33,6 @@ func (p *PostgresRefreshTokenRepository) RevokeRefreshToken(userID uuid.UUID) er
 	panic("unimplemented")
 }
 
-func (p *PostgresRefreshTokenRepository) StoreRefreshToken(refreshToken string, userID uuid.UUID, expiredsAt time.Duration) error {
+func (p *PostgresRefreshTokenRepository) StoreRefreshToken(refreshToken string, userID uuid.UUID, expiredsAt time.Time) error {
 	panic("unimplemented")
 }
