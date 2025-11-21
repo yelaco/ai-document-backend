@@ -21,7 +21,7 @@ services:
     restart: always
     environment:
       - POSTGRES_USER=${DB_USER}
-      - POSTGRES_DB=${DB_NAME}_prod
+      - POSTGRES_DB=${DB_NAME}
       - POSTGRES_PASSWORD=${DB_PASS}
     ports:
       - 5432:5432
@@ -45,7 +45,7 @@ services:
 
   chromadb:
     image: chromadb/chroma
-    container_name: chromadb-ai-document-dev
+    container_name: chromadb-ai-document-prod
     restart: always
     environment:
       - CHROMA_SERVER_CORS_ALLOW_ORIGINS='*'
@@ -64,7 +64,7 @@ services:
 
   zipkin:
     image: openzipkin/zipkin
-    container_name: zipkin-for-chromadb-ai-document-dev
+    container_name: zipkin-for-chromadb-ai-document-prod
     ports:
       - 9411:9411
     depends_on: [otel-collector]
@@ -73,10 +73,10 @@ services:
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.111.0
-    container_name: otel-collector-for-chromadb-ai-document-dev
+    container_name: otel-collector-for-chromadb-ai-document-prod
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
-      - ${PWD}/config/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ${PWD}/configs/otel-collector-config.yaml:/etc/otel-collector-config.yaml
     networks:
       - otel_net
 

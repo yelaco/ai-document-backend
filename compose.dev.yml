@@ -1,11 +1,11 @@
 services:
   db:
     image: postgres:15-alpine
-    container_name: postgres-ai-document-prod
+    container_name: postgres-ai-document-dev
     restart: always
     environment:
       - POSTGRES_USER=${DB_USER}
-      - POSTGRES_DB=${DB_NAME}_prod
+      - POSTGRES_DB=${DB_NAME}
       - POSTGRES_PASSWORD=${DB_PASS}
     ports:
       - 5432:5432
@@ -16,7 +16,7 @@ services:
 
   redis:
     image: redis:alpine3.22
-    container_name: redis-ai-document-prod
+    container_name: redis-ai-document-dev
     environment:
       - REDIS_PASSWORD=${REDIS_PASS}
     ports:
@@ -60,7 +60,7 @@ services:
     container_name: otel-collector-for-chromadb-ai-document-dev
     command: ["--config=/etc/otel-collector-config.yaml"]
     volumes:
-      - ${PWD}/config/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+      - ${PWD}/configs/otel-collector-config.yaml:/etc/otel-collector-config.yaml
     networks:
       - otel_net
 

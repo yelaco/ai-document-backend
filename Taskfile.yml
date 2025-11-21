@@ -1,10 +1,18 @@
 version: "3"
 
+dotenv:
+  - .env
+
 vars:
   BINARY_NAME: server
   PKG: ./cmd/server/main.go
+  MIGRATION_PATH: ./migrations
 
 tasks:
+  default:
+    cmds:
+      - echo 'No default task'
+
   setup:
     desc: Setup the project
     cmds:
@@ -60,5 +68,48 @@ tasks:
       - go run {{.PKG}}
 
   sqlc:
+    desc: Generate source code from SQL
     cmds:
       - go tool -modfile=go.tool.mod sqlc generate
+
+  docker-up:
+    desc: Run docker-compose in dev mode
+    cmds:
+      - docker-compose -f compose.dev.yml --env-file .env up
+
+  docker-down:
+    desc: Stop docker containers
+    cmds:
+      - docker-compose -f compose.dev.yml --env-file .env down
+
+  migrate-force:*:
+    vars:
+      VERSION: "{{index .MATCH 0}}"
+    cmds:
+      - go run -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest -path {{.MIGRATION_PATH}}/ -database "{{.DB_URL}}" force {{.VERSION}}
+
+  migrate-up:
+    cmds:
+      - go run -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest -path {{.MIGRATION_PATH}}/ -database "{{.DB_URL}}" --verbose up
+
+  migrate-up:*:
+    vars:
+      NUM: "{{index .MATCH 0}}"
+    cmds:
+      - go run -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest -path {{.MIGRATION_PATH}}/ -database "{{.DB_URL}}" --verbose up {{.NUM}}
+
+  migrate-down:
+    cmds:
+      - go run -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest -path {{.MIGRATION_PATH}}/ -database "{{.DB_URL}}" --verbose down
+
+  migrate-down:*:
+    vars:
+      NUM: "{{index .MATCH 0}}"
+    cmds:
+      - go run -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest -path {{.MIGRATION_PATH}}/ -database "{{.DB_URL}}" --verbose down {{.NUM}}
+
+  new-migration:*:
+    vars:
+      NAME: "{{index .MATCH 0}}"
+    cmds:
+      - go run -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest create -ext sql -dir {{.MIGRATION_PATH}} -seq {{.NAME}}

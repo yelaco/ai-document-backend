@@ -21,7 +21,7 @@ COPY . .
 # Build the binary
 # CGO_ENABLED=0: Disables CGO for a static binary (required for Alpine/Scratch)
 # -ldflags="-w -s": Strips debug information to reduce binary size
-RUN task build-release
+RUN task build-release-linux
 
 # ==========================================
 # Stage 2: Runner
@@ -37,8 +37,8 @@ RUN apk --no-cache add ca-certificates
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # Copy the binary from the builder stage
-COPY --from=builder /app/main .
-COPY .env .
+COPY --from=builder /app/build/server .
+COPY .env .env
 COPY migrations ./migrations
 
 # Switch to the non-root user
@@ -48,4 +48,4 @@ USER appuser
 EXPOSE 7202
 
 # Run the binary
-CMD ["./main"]
+CMD ["./server"]
