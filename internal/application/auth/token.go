@@ -1,8 +1,9 @@
 package auth
 
 import (
-	"crypto/rand"
 	"encoding/base64"
+
+	"github.com/yelaco/ai-document-backend/pkg/util"
 )
 
 const (
@@ -32,8 +33,8 @@ func createAccessToken(userID string, email string, role string) (string, error)
 }
 
 func createRefreshToken() (string, error) {
-	b := make([]byte, 64)
-	if _, err := rand.Read(b); err != nil {
+	b, err := util.GenerateRandomBytes(64)
+	if err != nil {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil

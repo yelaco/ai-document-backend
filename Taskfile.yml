@@ -42,7 +42,7 @@ tasks:
   test:
     desc: Run tests
     cmds:
-      - go test -v ./test/
+      - go test -v ./...
 
   clean:
     desc: Clean build artifacts
