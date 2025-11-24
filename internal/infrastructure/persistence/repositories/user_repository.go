@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
@@ -23,7 +24,19 @@ func NewPostgresUserRepository(connPool *pgxpool.Pool) interfaces.UserRepository
 
 // CreateUser implements interfaces.UserRepository.
 func (p *PostgresUserRepository) CreateUser(ctx context.Context, user *entity.User) error {
-	panic("unimplemented")
+	row, err := p.queries.CreateUser(ctx, sqlc.CreateUserParams{
+		Email:        user.Email,
+		PasswordHash: user.PasswordHash,
+		FullName:     user.FullName,
+		Role:         string(user.Role),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create user: %w", err)
+	}
+	user.ID = row.ID
+	user.CreatedAt = row.CreatedAt
+	user.UpdatedAt = row.UpdatedAt
+	return nil
 }
 
 // GetUserByEmail implements interfaces.UserRepository.

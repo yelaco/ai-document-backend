@@ -45,7 +45,7 @@ func main() {
 	userRepo := repositories.NewPostgresUserRepository(connPool)
 	refreshTokenRepo := repositories.NewRefreshTokenRepository(connPool)
 	passwordHasher := authInfra.NewArgon2PasswordHasher()
-	authService := auth.NewAuthService(logger, userRepo, refreshTokenRepo, passwordHasher)
+	authService := auth.NewAuthService(userRepo, refreshTokenRepo, passwordHasher)
 	userHandler := handlers.NewUserHandler(logger)
 	authHandler := handlers.NewAuthHandler(logger, authService)
 

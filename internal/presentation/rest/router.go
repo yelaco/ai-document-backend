@@ -3,6 +3,7 @@ package rest
 import (
 	"net/http"
 
+	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/dtos"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/handlers"
@@ -22,6 +23,7 @@ func NewRouter(logger *zap.Logger) *Router {
 	}
 	r.engine.Use(middleware.ZapLogger(logger))
 	r.engine.Use(gin.Recovery())
+	r.engine.Use(requestid.New())
 	return &r
 }
 

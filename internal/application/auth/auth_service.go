@@ -9,19 +9,16 @@ import (
 	"github.com/yelaco/ai-document-backend/internal/domain/models/entity"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/auth"
 	"github.com/yelaco/ai-document-backend/pkg/util"
-	"go.uber.org/zap"
 )
 
 type AuthService struct {
-	logger           *zap.Logger
 	userRepo         interfaces.UserRepository
 	refreshTokenRepo interfaces.RefreshTokenRepository
 	passwordHasher   util.PasswordHasher
 }
 
-func NewAuthService(logger *zap.Logger, userRepo interfaces.UserRepository, refreshTokenRepo interfaces.RefreshTokenRepository, passwordHasher util.PasswordHasher) interfaces.AuthService {
+func NewAuthService(userRepo interfaces.UserRepository, refreshTokenRepo interfaces.RefreshTokenRepository, passwordHasher util.PasswordHasher) interfaces.AuthService {
 	return &AuthService{
-		logger:           logger.With(zap.String("application", "AuthService")),
 		userRepo:         userRepo,
 		refreshTokenRepo: refreshTokenRepo,
 		passwordHasher:   passwordHasher,
@@ -79,4 +76,48 @@ func (a *AuthService) RegisterUser(ctx context.Context, email string, fullName s
 	}
 
 	return newUser, nil
+}
+
+func (a *AuthService) RefreshFlow(ctx context.Context, oldRefreshToken string) (entity.Auth, error) {
+	userId, exist := UserIDFromContext(ctx)
+	if !exist {
+		return entity.Auth{}, AuthErrorInvalidCredentials
+	}
+
+	tokenHash, err := a.refreshTokenRepo.GetRefreshTokenHash(userId)
+	if err != nil {
+		return entity.Auth{}, fmt.Errorf("failed to get refresh token hash: %w", err)
+	}
+
+	err = a.passwordHasher.VerifyPassword(oldRefreshToken, tokenHash)
+	if err != nil {
+		return entity.Auth{}, AuthErrorInvalidCredentials
+	}
+
+	err = a.refreshTokenRepo.RevokeRefreshToken(userId)
+	if err != nil {
+		return entity.Auth{}, fmt.Errorf("failed to revoke refresh token: %w", err)
+	}
+
+	authClaims, exist := AuthClaimsFromContext(ctx)
+	if !exist {
+		return entity.Auth{}, AuthErrorInvalidCredentials
+	}
+	accessToken, err := createAccessToken(userId.String(), authClaims.Email, string(authClaims.Role))
+	if err != nil {
+		return entity.Auth{}, fmt.Errorf("failed to create access token: %w", err)
+	}
+
+	refreshToken, err := createRefreshToken()
+	refreshTokenHash, err := a.passwordHasher.HashPassword(refreshToken)
+	if err != nil {
+		return entity.Auth{}, fmt.Errorf("failed to hash refresh token: %w", err)
+	}
+	newExpiresAt := time.Now().Add(RefreshTokenExpirationDays * 24 * time.Hour)
+	a.refreshTokenRepo.StoreRefreshToken(refreshTokenHash, userId, newExpiresAt)
+
+	return entity.Auth{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }

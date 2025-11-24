@@ -1,13 +1,22 @@
 package dtos
 
+import "github.com/gin-gonic/gin"
+
+type ResponseStatus string
+
+const (
+	StatusSuccess ResponseStatus = "success"
+	StatusError   ResponseStatus = "error"
+)
+
 type BaseAPIResponse struct {
-	Status string `json:"status"`
-	Data   any    `json:"data"`
+	Status ResponseStatus `json:"status"`
+	Data   gin.H          `json:"data"`
 }
 
 type BaseErrorResponse struct {
-	Status string         `json:"status"`
-	Error  *ErrorResponse `json:"error"`
+	Status ResponseStatus `json:"status"`
+	Error  ErrorResponse  `json:"error"`
 }
 
 type ErrorResponse struct {
