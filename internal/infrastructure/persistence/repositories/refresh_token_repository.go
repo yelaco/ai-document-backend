@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,18 +23,38 @@ func NewRefreshTokenRepository(connPool *pgxpool.Pool) interfaces.RefreshTokenRe
 	}
 }
 
-func (p *PostgresRefreshTokenRepository) DeleteRefreshToken(userID uuid.UUID) error {
-	panic("unimplemented")
+func (p *PostgresRefreshTokenRepository) DeleteRefreshToken(ctx context.Context, userID uuid.UUID) error {
+	err := p.queries.DeleteRefreshTokenByUserID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete refresh token: %w", err)
+	}
+	return nil
 }
 
-func (p *PostgresRefreshTokenRepository) GetRefreshTokenHash(userID uuid.UUID) (string, error) {
-	panic("unimplemented")
+func (p *PostgresRefreshTokenRepository) GetRefreshTokenHash(ctx context.Context, userID uuid.UUID) (string, error) {
+	row, err := p.queries.GetRefreshTokenHashByUserID(ctx, userID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get refresh token hash: %w", err)
+	}
+	return row.TokenHash, nil
 }
 
-func (p *PostgresRefreshTokenRepository) RevokeRefreshToken(userID uuid.UUID) error {
-	panic("unimplemented")
+func (p *PostgresRefreshTokenRepository) RevokeRefreshToken(ctx context.Context, userID uuid.UUID) error {
+	err := p.queries.RevokeRefreshTokenByUserID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to revoke refresh token: %w", err)
+	}
+	return nil
 }
 
-func (p *PostgresRefreshTokenRepository) StoreRefreshToken(refreshToken string, userID uuid.UUID, expiredsAt time.Time) error {
-	panic("unimplemented")
+func (p *PostgresRefreshTokenRepository) StoreRefreshToken(ctx context.Context, userID uuid.UUID, refreshTokenHash string, expiredsAt time.Time) error {
+	err := p.queries.InsertRefreshToken(ctx, sqlc.InsertRefreshTokenParams{
+		UserID:    userID,
+		TokenHash: refreshTokenHash,
+		ExpiresAt: expiredsAt,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to store refresh token: %w", err)
+	}
+	return nil
 }

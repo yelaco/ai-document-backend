@@ -44,15 +44,19 @@ func (a *AuthService) LoginUser(ctx context.Context, email string, password stri
 	if err != nil {
 		return entity.Auth{}, fmt.Errorf("failed to create refresh token: %w", err)
 	}
-
+	refreshTokenHash, err := a.passwordHasher.HashPassword(refreshToken)
+	if err != nil {
+		return entity.Auth{}, fmt.Errorf("failed to hash refresh token: %w", err)
+	}
 	newExpiresAt := time.Now().Add(RefreshTokenExpirationDays * 24 * time.Hour)
-	err = a.refreshTokenRepo.StoreRefreshToken(refreshToken, user.ID, newExpiresAt)
+	err = a.refreshTokenRepo.StoreRefreshToken(ctx, user.ID, refreshTokenHash, newExpiresAt)
 	if err != nil {
 		return entity.Auth{}, fmt.Errorf("failed to store refresh token: %w", err)
 	}
 
 	return entity.Auth{
-		AccessToken: accessToken, RefreshToken: refreshToken,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	}, nil
 }
 
@@ -84,7 +88,7 @@ func (a *AuthService) RefreshFlow(ctx context.Context, oldRefreshToken string) (
 		return entity.Auth{}, AuthErrorInvalidCredentials
 	}
 
-	tokenHash, err := a.refreshTokenRepo.GetRefreshTokenHash(userId)
+	tokenHash, err := a.refreshTokenRepo.GetRefreshTokenHash(ctx, userId)
 	if err != nil {
 		return entity.Auth{}, fmt.Errorf("failed to get refresh token hash: %w", err)
 	}
@@ -94,7 +98,7 @@ func (a *AuthService) RefreshFlow(ctx context.Context, oldRefreshToken string) (
 		return entity.Auth{}, AuthErrorInvalidCredentials
 	}
 
-	err = a.refreshTokenRepo.RevokeRefreshToken(userId)
+	err = a.refreshTokenRepo.RevokeRefreshToken(ctx, userId)
 	if err != nil {
 		return entity.Auth{}, fmt.Errorf("failed to revoke refresh token: %w", err)
 	}
@@ -109,12 +113,15 @@ func (a *AuthService) RefreshFlow(ctx context.Context, oldRefreshToken string) (
 	}
 
 	refreshToken, err := createRefreshToken()
+	if err != nil {
+		return entity.Auth{}, fmt.Errorf("failed to create refresh token: %w", err)
+	}
 	refreshTokenHash, err := a.passwordHasher.HashPassword(refreshToken)
 	if err != nil {
 		return entity.Auth{}, fmt.Errorf("failed to hash refresh token: %w", err)
 	}
 	newExpiresAt := time.Now().Add(RefreshTokenExpirationDays * 24 * time.Hour)
-	a.refreshTokenRepo.StoreRefreshToken(refreshTokenHash, userId, newExpiresAt)
+	a.refreshTokenRepo.StoreRefreshToken(ctx, userId, refreshTokenHash, newExpiresAt)
 
 	return entity.Auth{
 		AccessToken:  accessToken,

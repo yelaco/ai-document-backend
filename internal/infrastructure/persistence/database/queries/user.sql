@@ -8,7 +8,7 @@ INSERT INTO users (
   $1, $2, $3, $4
 ) RETURNING *;
 
--- name: GetUser :one
+-- name: GetUserByEmail :one
 SELECT id, email, password_hash, full_name, role, created_at, updated_at
 FROM users
 WHERE email = $1 LIMIT 1;

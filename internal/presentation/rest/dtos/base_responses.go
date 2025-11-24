@@ -1,7 +1,5 @@
 package dtos
 
-import "github.com/gin-gonic/gin"
-
 type ResponseStatus string
 
 const (
@@ -11,7 +9,7 @@ const (
 
 type BaseAPIResponse struct {
 	Status ResponseStatus `json:"status"`
-	Data   gin.H          `json:"data"`
+	Data   any            `json:"data"`
 }
 
 type BaseErrorResponse struct {

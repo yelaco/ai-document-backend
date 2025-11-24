@@ -9,4 +9,5 @@ import (
 type AuthService interface {
 	RegisterUser(ctx context.Context, email string, fullName string, password string) (entity.User, error)
 	LoginUser(ctx context.Context, email string, password string) (entity.Auth, error)
+	RefreshFlow(ctx context.Context, oldRefreshToken string) (entity.Auth, error)
 }

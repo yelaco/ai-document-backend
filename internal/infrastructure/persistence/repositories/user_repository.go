@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
 	"github.com/yelaco/ai-document-backend/internal/domain/models/entity"
+	"github.com/yelaco/ai-document-backend/internal/infrastructure/auth"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/persistence/database/sqlc"
 )
 
@@ -41,7 +42,19 @@ func (p *PostgresUserRepository) CreateUser(ctx context.Context, user *entity.Us
 
 // GetUserByEmail implements interfaces.UserRepository.
 func (p *PostgresUserRepository) GetUserByEmail(ctx context.Context, email string) (*entity.User, error) {
-	panic("unimplemented")
+	row, err := p.queries.GetUserByEmail(ctx, email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by email: %w", err)
+	}
+	return &entity.User{
+		ID:           row.ID,
+		Email:        row.Email,
+		PasswordHash: row.PasswordHash,
+		FullName:     row.FullName,
+		Role:         auth.Role(row.Role),
+		CreatedAt:    row.CreatedAt,
+		UpdatedAt:    row.UpdatedAt,
+	}, nil
 }
 
 // GetUserByID implements interfaces.UserRepository.
