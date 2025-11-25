@@ -9,6 +9,7 @@ import (
 	"github.com/yelaco/ai-document-backend/internal/config"
 	authInfra "github.com/yelaco/ai-document-backend/internal/infrastructure/auth"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/persistence/repositories"
+	"github.com/yelaco/ai-document-backend/internal/infrastructure/token"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/handlers"
 	"github.com/yelaco/ai-document-backend/pkg/logger"
@@ -41,16 +42,22 @@ func main() {
 		logger.Fatal("failed to ping database:", zap.Error(err))
 	}
 
+	// setup paseto token maker
+	tokenMaker, err := token.NewPasetoV4Maker()
+	if err != nil {
+		logger.Fatal("failed to create token maker:", zap.Error(err))
+	}
+
 	// inject dependencies
 	userRepo := repositories.NewPostgresUserRepository(connPool)
 	refreshTokenRepo := repositories.NewRefreshTokenRepository(connPool)
 	passwordHasher := authInfra.NewArgon2PasswordHasher()
-	authService := auth.NewAuthService(userRepo, refreshTokenRepo, passwordHasher)
+	authService := auth.NewAuthService(userRepo, refreshTokenRepo, passwordHasher, tokenMaker)
 	userHandler := handlers.NewUserHandler(logger)
 	authHandler := handlers.NewAuthHandler(logger, authService)
 
 	// setup router
-	router := rest.NewRouter(logger)
+	router := rest.NewRouter(logger, tokenMaker)
 	router.SetupRoutes(userHandler, authHandler)
 
 	// start server

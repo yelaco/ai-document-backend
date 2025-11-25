@@ -113,6 +113,21 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	})
 }
 
+func (h *AuthHandler) GetPublicKey(c *gin.Context) {
+	h.logger.Info(
+		"GetPublicKey called",
+		zap.String("request_id", requestid.Get(c)),
+	)
+	publicKey := h.authService.GetPublicKey(c.Request.Context())
+
+	c.JSON(http.StatusOK, dtos.BaseAPIResponse{
+		Status: dtos.StatusSuccess,
+		Data: gin.H{
+			"publicKey": publicKey,
+		},
+	})
+}
+
 func (h *AuthHandler) RefreshAccessToken(c *gin.Context) {
 	h.logger.Info(
 		"RefreshAccessToken called",

@@ -17,6 +17,7 @@ const (
 type Config struct {
 	App      AppConfig      `mapstructure:"app"`
 	Database DatabaseConfig `mapstructure:"database"`
+	Token    TokenConfig    `mapstructure:"token"`
 }
 
 type AppConfig struct {
@@ -31,6 +32,10 @@ type DatabaseConfig struct {
 	Port     string `mapstructure:"port"`
 	User     string `mapstructure:"user"`
 	Password string `mapstructure:"password"`
+}
+
+type TokenConfig struct {
+	PasetoV4LocalKey string `mapstructure:"PASETO_V4_LOCAL_KEY"`
 }
 
 // MustLoadConfig reads configurations from file or environment variables

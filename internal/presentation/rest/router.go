@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
+	"github.com/yelaco/ai-document-backend/internal/infrastructure/token"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/dtos"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/handlers"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/middleware"
@@ -16,7 +17,7 @@ type Router struct {
 	engine *gin.Engine
 }
 
-func NewRouter(logger *zap.Logger) *Router {
+func NewRouter(logger *zap.Logger, tokenMaker token.Maker) *Router {
 	r := Router{
 		logger: logger,
 		engine: gin.New(),
@@ -24,6 +25,7 @@ func NewRouter(logger *zap.Logger) *Router {
 	r.engine.Use(middleware.ZapLogger(logger))
 	r.engine.Use(gin.Recovery())
 	r.engine.Use(requestid.New())
+	r.engine.Use(middleware.AuthMiddleware(logger, tokenMaker))
 	return &r
 }
 
@@ -49,6 +51,7 @@ func (r *Router) SetupRoutes(userHandler *handlers.UserHandler, authHandler *han
 			authRouter.POST("/login", authHandler.Login)
 			authRouter.POST("/logout", authHandler.Logout)
 			authRouter.POST("/refresh", authHandler.RefreshAccessToken)
+			authRouter.GET("/publicKey", authHandler.GetPublicKey)
 		}
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
 	"github.com/yelaco/ai-document-backend/internal/domain/models/entity"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/auth"
+	"github.com/yelaco/ai-document-backend/internal/infrastructure/token"
 	"github.com/yelaco/ai-document-backend/pkg/util"
 )
 
@@ -15,13 +16,20 @@ type AuthService struct {
 	userRepo         interfaces.UserRepository
 	refreshTokenRepo interfaces.RefreshTokenRepository
 	passwordHasher   util.PasswordHasher
+	tokenMaker       token.Maker
 }
 
-func NewAuthService(userRepo interfaces.UserRepository, refreshTokenRepo interfaces.RefreshTokenRepository, passwordHasher util.PasswordHasher) interfaces.AuthService {
+func NewAuthService(
+	userRepo interfaces.UserRepository,
+	refreshTokenRepo interfaces.RefreshTokenRepository,
+	passwordHasher util.PasswordHasher,
+	tokenMaker token.Maker,
+) interfaces.AuthService {
 	return &AuthService{
 		userRepo:         userRepo,
 		refreshTokenRepo: refreshTokenRepo,
 		passwordHasher:   passwordHasher,
+		tokenMaker:       tokenMaker,
 	}
 }
 
@@ -35,7 +43,7 @@ func (a *AuthService) LoginUser(ctx context.Context, email string, password stri
 		return entity.Auth{}, AuthErrorInvalidCredentials
 	}
 
-	accessToken, err := createAccessToken(user.ID.String(), email, string(user.Role))
+	accessToken, err := a.tokenMaker.CreateToken(user.ID.String(), email, string(user.Role))
 	if err != nil {
 		return entity.Auth{}, fmt.Errorf("failed to create access token: %w", err)
 	}
@@ -107,7 +115,7 @@ func (a *AuthService) RefreshFlow(ctx context.Context, oldRefreshToken string) (
 	if !exist {
 		return entity.Auth{}, AuthErrorInvalidCredentials
 	}
-	accessToken, err := createAccessToken(userId.String(), authClaims.Email, string(authClaims.Role))
+	accessToken, err := a.tokenMaker.CreateToken(userId.String(), authClaims.Email, string(authClaims.Role))
 	if err != nil {
 		return entity.Auth{}, fmt.Errorf("failed to create access token: %w", err)
 	}
@@ -127,4 +135,8 @@ func (a *AuthService) RefreshFlow(ctx context.Context, oldRefreshToken string) (
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 	}, nil
+}
+
+func (a *AuthService) GetPublicKey(ctx context.Context) string {
+	return a.tokenMaker.GetPublicKey()
 }
