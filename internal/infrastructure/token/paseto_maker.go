@@ -64,7 +64,7 @@ func (maker *PasetoV4Maker) VerifyToken(signed string, skipExp bool) (*Claims, e
 
 	parsedToken, err := parser.ParseV4Public(maker.publicKey, signed, nil)
 	if err != nil {
-		return nil, fmt.Errorf("token.PasetoV4Maker.VerifyToken: %w", ErrInvalidToken)
+		return nil, fmt.Errorf("token.PasetoV4Maker.VerifyToken: %w", err)
 	}
 
 	sub, err := parsedToken.GetSubject()

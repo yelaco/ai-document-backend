@@ -3,35 +3,30 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/dtos"
+	"github.com/yelaco/ai-document-backend/internal/presentation/rest/middlewares"
 	"go.uber.org/zap"
 )
 
 const RefreshTokenCookieExpiryInDays = 7
 
 type AuthHandler struct {
-	logger      *zap.Logger
 	authService interfaces.AuthService
 }
 
-func NewAuthHandler(logger *zap.Logger, authService interfaces.AuthService) *AuthHandler {
+func NewAuthHandler(authService interfaces.AuthService) *AuthHandler {
 	return &AuthHandler{
-		logger:      logger.With(zap.String("presentation", "AuthHandler")),
 		authService: authService,
 	}
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
-	h.logger.Info(
-		"Register called",
-		zap.String("request_id", requestid.Get(c)),
-	)
-
+	l := middlewares.MustGetContextualLogger(c)
 	var req dtos.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		l.Error("AuthHandler.Login: failed to extract request body", zap.Error(err))
 		c.JSON(http.StatusBadRequest, dtos.BaseErrorResponse{
 			Status: dtos.StatusError,
 			Error: dtos.ErrorResponse{
@@ -43,7 +38,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 
 	user, err := h.authService.RegisterUser(c.Request.Context(), req.Email, req.FullName, req.Password)
 	if err != nil {
-		h.logger.Error("Failed to register user", zap.Error(err))
+		l.Error("AuthHandler.Register: failed to register user", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, dtos.BaseErrorResponse{
 			Status: dtos.StatusError,
 			Error: dtos.ErrorResponse{
@@ -63,13 +58,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
-	h.logger.Info(
-		"Login called",
-		zap.String("request_id", requestid.Get(c)),
-	)
-
+	l := middlewares.MustGetContextualLogger(c)
 	var req dtos.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		l.Error("AuthHandler.Login: failed to extract request body", zap.Error(err))
 		c.JSON(http.StatusBadRequest, dtos.BaseErrorResponse{
 			Status: dtos.StatusError,
 			Error: dtos.ErrorResponse{
@@ -80,7 +72,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 	auth, err := h.authService.LoginUser(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		h.logger.Error("Failed to login user", zap.Error(err))
+		l.Error("AuthHandler.Login: failed to login user", zap.Error(err))
 		c.JSON(http.StatusUnauthorized, dtos.BaseErrorResponse{
 			Status: dtos.StatusError,
 			Error: dtos.ErrorResponse{
@@ -103,10 +95,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {
-	h.logger.Info(
-		"Logout called",
-		zap.String("request_id", requestid.Get(c)),
-	)
 	setRefreshTokenCookie(c, "", true)
 	c.JSON(http.StatusOK, dtos.BaseAPIResponse{
 		Status: dtos.StatusSuccess,
@@ -114,10 +102,6 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 }
 
 func (h *AuthHandler) GetPublicKey(c *gin.Context) {
-	h.logger.Info(
-		"GetPublicKey called",
-		zap.String("request_id", requestid.Get(c)),
-	)
 	publicKey := h.authService.GetPublicKey(c.Request.Context())
 
 	c.JSON(http.StatusOK, dtos.BaseAPIResponse{
@@ -129,13 +113,10 @@ func (h *AuthHandler) GetPublicKey(c *gin.Context) {
 }
 
 func (h *AuthHandler) RefreshAccessToken(c *gin.Context) {
-	h.logger.Info(
-		"RefreshAccessToken called",
-		zap.String("request_id", requestid.Get(c)),
-	)
+	l := middlewares.MustGetContextualLogger(c)
 	refreshToken, err := c.Cookie("refresh_token")
 	if err != nil {
-		h.logger.Error("Failed to get refresh token from cookie", zap.Error(err))
+		l.Error("AuthHandler.RefreshAccessToken: failed to get refresh token from cookie", zap.Error(err))
 		c.JSON(http.StatusUnauthorized, dtos.BaseErrorResponse{
 			Status: dtos.StatusError,
 			Error: dtos.ErrorResponse{
@@ -148,7 +129,7 @@ func (h *AuthHandler) RefreshAccessToken(c *gin.Context) {
 
 	auth, err := h.authService.RefreshFlow(c.Request.Context(), refreshToken)
 	if err != nil {
-		h.logger.Error("Failed to refresh access token", zap.Error(err))
+		l.Error("AuthHandler.RefreshAccessToken: failed to refresh access token", zap.Error(err))
 		c.JSON(http.StatusUnauthorized, dtos.BaseErrorResponse{
 			Status: dtos.StatusError,
 			Error: dtos.ErrorResponse{

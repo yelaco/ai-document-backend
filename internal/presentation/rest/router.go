@@ -8,7 +8,7 @@ import (
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/token"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/dtos"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/handlers"
-	"github.com/yelaco/ai-document-backend/internal/presentation/rest/middleware"
+	"github.com/yelaco/ai-document-backend/internal/presentation/rest/middlewares"
 	"go.uber.org/zap"
 )
 
@@ -17,23 +17,29 @@ type Router struct {
 	engine *gin.Engine
 }
 
-func NewRouter(logger *zap.Logger, tokenMaker token.Maker) *Router {
+func NewRouter(logger *zap.Logger) *Router {
 	r := Router{
 		logger: logger,
 		engine: gin.New(),
 	}
-	r.engine.Use(middleware.ZapLogger(logger))
 	r.engine.Use(gin.Recovery())
 	r.engine.Use(requestid.New())
-	r.engine.Use(middleware.AuthMiddleware(logger, tokenMaker))
 	return &r
 }
 
-func (r *Router) SetupRoutes(userHandler *handlers.UserHandler, authHandler *handlers.AuthHandler) {
+func (r *Router) SetupRoutes(
+	tokenMaker token.Maker,
+	userHandler *handlers.UserHandler,
+	authHandler *handlers.AuthHandler,
+	documentHandler *handlers.DocumentHandler,
+) {
+	r.engine.Use(middlewares.ZapLoggerMiddleware(r.logger))
+	authMiddlware := middlewares.AuthMiddleware(tokenMaker)
+
 	// health check
 	r.engine.GET("/health-check", func(c *gin.Context) {
 		data := dtos.BaseAPIResponse{
-			Status: "success",
+			Status: dtos.StatusSuccess,
 			Data:   gin.H{"message": "Health check OK!"},
 		}
 		c.JSON(http.StatusOK, data)
@@ -43,15 +49,24 @@ func (r *Router) SetupRoutes(userHandler *handlers.UserHandler, authHandler *han
 	{
 		userRouter := apiRouter.Group("/users")
 		{
+			userRouter.Use(authMiddlware)
 			userRouter.GET("/:id", userHandler.GetUserByID)
 		}
 		authRouter := apiRouter.Group("/auth")
 		{
 			authRouter.POST("/register", authHandler.Register)
 			authRouter.POST("/login", authHandler.Login)
-			authRouter.POST("/logout", authHandler.Logout)
-			authRouter.POST("/refresh", authHandler.RefreshAccessToken)
+			authRouter.POST("/logout", authMiddlware, authHandler.Logout)
+			authRouter.POST("/refresh", authMiddlware, authHandler.RefreshAccessToken)
 			authRouter.GET("/publicKey", authHandler.GetPublicKey)
+		}
+		documentRouter := apiRouter.Group("/documents")
+		{
+			documentRouter.Use(authMiddlware)
+			documentRouter.POST("/", documentHandler.UploadDocument)
+			documentRouter.GET("/", documentHandler.ListDocuments)
+			documentRouter.GET("/:id", documentHandler.GetDocumentByID)
+			documentRouter.DELETE("/:id", documentHandler.DeleteDocument)
 		}
 	}
 }

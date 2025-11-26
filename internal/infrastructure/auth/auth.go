@@ -1,5 +1,9 @@
 package auth
 
+import (
+	"errors"
+)
+
 type Role string
 
 const (
@@ -7,12 +11,16 @@ const (
 	RoleAdmin Role = "admin"
 )
 
-func IsValidRole(role Role) bool {
+var ErrInvalidRole = errors.New("invalid role")
+
+func ParseRole(role string) (Role, error) {
 	switch role {
-	case RoleUser, RoleAdmin:
-		return true
+	case "user":
+		return RoleUser, nil
+	case "admin":
+		return RoleAdmin, nil
 	default:
-		return false
+		return "", ErrInvalidRole
 	}
 }
 

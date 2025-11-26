@@ -25,6 +25,18 @@ func UserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 	return userId, ok
 }
 
+func UserIDMustFromContext(ctx context.Context) uuid.UUID {
+	id, ok := ctx.Value(UserIDKey{}).(string)
+	if !ok {
+		panic("user ID not found in context")
+	}
+	userId, err := uuid.Parse(id)
+	if err != nil {
+		panic("invalid user ID format in context")
+	}
+	return userId
+}
+
 func UserIDTryFromContext(ctx context.Context) uuid.UUID {
 	id, ok := ctx.Value(UserIDKey{}).(string)
 	if !ok {
@@ -46,4 +58,12 @@ func WithAuthClaims(ctx context.Context, claims *auth.AuthClaims) context.Contex
 func AuthClaimsFromContext(ctx context.Context) (*auth.AuthClaims, bool) {
 	claims, ok := ctx.Value(AuthClaimsKey{}).(*auth.AuthClaims)
 	return claims, ok
+}
+
+func AuthClaimsMustFromContext(ctx context.Context) *auth.AuthClaims {
+	claims, ok := ctx.Value(AuthClaimsKey{}).(*auth.AuthClaims)
+	if !ok {
+		panic("auth claims not found in context")
+	}
+	return claims
 }

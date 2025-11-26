@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
@@ -21,21 +23,21 @@ func NewDocumentRepository(connPool *pgxpool.Pool) interfaces.DocumentRepository
 }
 
 // CreateDocument implements interfaces.DocumentRepository.
-func (p *PostgresDocumentRepository) CreateDocument(title string, userID uuid.UUID) (entity.Document, error) {
+func (p *PostgresDocumentRepository) CreateDocument(ctx context.Context, document *entity.Document) error {
 	panic("unimplemented")
 }
 
 // DeleteDocumentByID implements interfaces.DocumentRepository.
-func (p *PostgresDocumentRepository) DeleteDocumentByID(documentID string) error {
+func (p *PostgresDocumentRepository) DeleteDocumentByID(ctx context.Context, documentID string) error {
 	panic("unimplemented")
 }
 
 // GetDocumentByID implements interfaces.DocumentRepository.
-func (p *PostgresDocumentRepository) GetDocumentByID(documentID string) (string, error) {
+func (p *PostgresDocumentRepository) GetDocumentByID(ctx context.Context, documentID string) (string, error) {
 	panic("unimplemented")
 }
 
 // GetDocumentsByUserID implements interfaces.DocumentRepository.
-func (p *PostgresDocumentRepository) GetDocumentsByUserID(userID uuid.UUID) ([]entity.Document, error) {
+func (p *PostgresDocumentRepository) GetDocumentsByUserID(ctx context.Context, userID uuid.UUID) ([]entity.Document, error) {
 	panic("unimplemented")
 }

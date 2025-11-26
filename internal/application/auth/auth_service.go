@@ -45,21 +45,21 @@ func (a *AuthService) LoginUser(ctx context.Context, email string, password stri
 
 	accessToken, err := a.tokenMaker.CreateToken(user.ID.String(), email, string(user.Role))
 	if err != nil {
-		return entity.Auth{}, fmt.Errorf("failed to create access token: %w", err)
+		return entity.Auth{}, fmt.Errorf("auth.AuthService.LoginUser: failed to create access token: %w", err)
 	}
 
 	refreshToken, err := createRefreshToken()
 	if err != nil {
-		return entity.Auth{}, fmt.Errorf("failed to create refresh token: %w", err)
+		return entity.Auth{}, fmt.Errorf("auth.AuthService.LoginUser: failed to create refresh token: %w", err)
 	}
 	refreshTokenHash, err := a.passwordHasher.HashPassword(refreshToken)
 	if err != nil {
-		return entity.Auth{}, fmt.Errorf("failed to hash refresh token: %w", err)
+		return entity.Auth{}, fmt.Errorf("auth.AuthService.LoginUser: failed to hash refresh token: %w", err)
 	}
 	newExpiresAt := time.Now().Add(RefreshTokenExpirationDays * 24 * time.Hour)
 	err = a.refreshTokenRepo.StoreRefreshToken(ctx, user.ID, refreshTokenHash, newExpiresAt)
 	if err != nil {
-		return entity.Auth{}, fmt.Errorf("failed to store refresh token: %w", err)
+		return entity.Auth{}, fmt.Errorf("auth.AuthService.LoginUser: failed to store refresh token: %w", err)
 	}
 
 	return entity.Auth{
@@ -72,7 +72,7 @@ func (a *AuthService) LoginUser(ctx context.Context, email string, password stri
 func (a *AuthService) RegisterUser(ctx context.Context, email string, fullName string, password string) (entity.User, error) {
 	passwordHash, err := a.passwordHasher.HashPassword(password)
 	if err != nil {
-		return entity.User{}, fmt.Errorf("failed to hash password: %w", err)
+		return entity.User{}, fmt.Errorf("auth.AuthService.RegisterUser: failed to hash password: %w", err)
 	}
 
 	newUser := entity.User{
@@ -84,56 +84,50 @@ func (a *AuthService) RegisterUser(ctx context.Context, email string, fullName s
 
 	err = a.userRepo.CreateUser(ctx, &newUser)
 	if err != nil {
-		return entity.User{}, fmt.Errorf("failed to create user: %w", err)
+		return entity.User{}, fmt.Errorf("auth.AuthService.RegisterUser: failed to create user: %w", err)
 	}
 
 	return newUser, nil
 }
 
 func (a *AuthService) RefreshFlow(ctx context.Context, oldRefreshToken string) (entity.Auth, error) {
-	userId, exist := UserIDFromContext(ctx)
-	if !exist {
-		return entity.Auth{}, AuthErrorInvalidCredentials
+	userId := UserIDMustFromContext(ctx)
+	authClaims := AuthClaimsMustFromContext(ctx)
+
+	refreshTokenHash, err := a.refreshTokenRepo.GetRefreshTokenHash(ctx, userId)
+	if err != nil {
+		return entity.Auth{}, fmt.Errorf("auth.AuthService.RefreshFlow: failed to get refresh token hash: %w", err)
 	}
 
-	tokenHash, err := a.refreshTokenRepo.GetRefreshTokenHash(ctx, userId)
+	err = a.passwordHasher.VerifyPassword(refreshTokenHash, oldRefreshToken)
 	if err != nil {
-		return entity.Auth{}, fmt.Errorf("failed to get refresh token hash: %w", err)
-	}
-
-	err = a.passwordHasher.VerifyPassword(oldRefreshToken, tokenHash)
-	if err != nil {
-		return entity.Auth{}, AuthErrorInvalidCredentials
+		return entity.Auth{}, fmt.Errorf("auth.AuthService.RefreshFlow: invalid refresh token: %w", err)
 	}
 
 	err = a.refreshTokenRepo.RevokeRefreshToken(ctx, userId)
 	if err != nil {
-		return entity.Auth{}, fmt.Errorf("failed to revoke refresh token: %w", err)
+		return entity.Auth{}, fmt.Errorf("auth.AuthService.RefreshFlow: failed to revoke refresh token: %w", err)
 	}
 
-	authClaims, exist := AuthClaimsFromContext(ctx)
-	if !exist {
-		return entity.Auth{}, AuthErrorInvalidCredentials
-	}
 	accessToken, err := a.tokenMaker.CreateToken(userId.String(), authClaims.Email, string(authClaims.Role))
 	if err != nil {
-		return entity.Auth{}, fmt.Errorf("failed to create access token: %w", err)
+		return entity.Auth{}, fmt.Errorf("auth.AuthService.RefreshFlow: failed to create access token: %w", err)
 	}
 
-	refreshToken, err := createRefreshToken()
+	newRefreshToken, err := createRefreshToken()
 	if err != nil {
-		return entity.Auth{}, fmt.Errorf("failed to create refresh token: %w", err)
+		return entity.Auth{}, fmt.Errorf("auth.AuthService.RefreshFlow: failed to create refresh token: %w", err)
 	}
-	refreshTokenHash, err := a.passwordHasher.HashPassword(refreshToken)
+	newRefreshTokenHash, err := a.passwordHasher.HashPassword(newRefreshToken)
 	if err != nil {
-		return entity.Auth{}, fmt.Errorf("failed to hash refresh token: %w", err)
+		return entity.Auth{}, fmt.Errorf("auth.AuthService.RefreshFlow: failed to hash refresh token: %w", err)
 	}
 	newExpiresAt := time.Now().Add(RefreshTokenExpirationDays * 24 * time.Hour)
-	a.refreshTokenRepo.StoreRefreshToken(ctx, userId, refreshTokenHash, newExpiresAt)
+	a.refreshTokenRepo.StoreRefreshToken(ctx, userId, newRefreshTokenHash, newExpiresAt)
 
 	return entity.Auth{
 		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+		RefreshToken: newRefreshToken,
 	}, nil
 }
 

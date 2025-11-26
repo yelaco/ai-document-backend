@@ -1,4 +1,4 @@
-package middleware
+package middlewares
 
 import (
 	"time"
@@ -8,7 +8,20 @@ import (
 	"go.uber.org/zap"
 )
 
-func ZapLogger(base *zap.Logger) gin.HandlerFunc {
+type LoggerSetter interface {
+	SetLogger(*zap.Logger)
+}
+
+func MustGetContextualLogger(c *gin.Context) *zap.Logger {
+	l, ok := c.Get("logger")
+	if !ok {
+		panic("logger not found in context")
+	}
+	logger, _ := l.(*zap.Logger)
+	return logger.With(zap.String("handler", "AuthHandler"))
+}
+
+func ZapLoggerMiddleware(base *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
@@ -17,6 +30,7 @@ func ZapLogger(base *zap.Logger) gin.HandlerFunc {
 		if reqID == "" {
 			reqID = uuid.New().String()
 		}
+		c.Set("req_id", reqID)
 
 		// create request-scoped logger
 		reqLogger := base.With(

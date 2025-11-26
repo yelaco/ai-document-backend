@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/yelaco/ai-document-backend/internal/application/auth"
+	"github.com/yelaco/ai-document-backend/internal/application/document"
 	"github.com/yelaco/ai-document-backend/internal/config"
 	authInfra "github.com/yelaco/ai-document-backend/internal/infrastructure/auth"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/persistence/repositories"
@@ -49,16 +50,19 @@ func main() {
 	}
 
 	// inject dependencies
+	passwordHasher := authInfra.NewArgon2PasswordHasher()
 	userRepo := repositories.NewPostgresUserRepository(connPool)
 	refreshTokenRepo := repositories.NewRefreshTokenRepository(connPool)
-	passwordHasher := authInfra.NewArgon2PasswordHasher()
+	documentRepo := repositories.NewDocumentRepository(connPool)
 	authService := auth.NewAuthService(userRepo, refreshTokenRepo, passwordHasher, tokenMaker)
-	userHandler := handlers.NewUserHandler(logger)
-	authHandler := handlers.NewAuthHandler(logger, authService)
+	documentService := document.NewDocumentService(documentRepo)
+	userHandler := handlers.NewUserHandler()
+	authHandler := handlers.NewAuthHandler(authService)
+	documentHandler := handlers.NewDocumentHandler(documentService)
 
 	// setup router
-	router := rest.NewRouter(logger, tokenMaker)
-	router.SetupRoutes(userHandler, authHandler)
+	router := rest.NewRouter(logger)
+	router.SetupRoutes(tokenMaker, userHandler, authHandler, documentHandler)
 
 	// start server
 	addr := fmt.Sprintf("%s:%s", cfg.App.Host, cfg.App.Port)

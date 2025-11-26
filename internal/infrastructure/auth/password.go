@@ -43,7 +43,7 @@ func NewArgon2PasswordHasher() util.PasswordHasher {
 func (ph *Argon2PasswordHasher) HashPassword(password string) (string, error) {
 	salt, err := util.GenerateRandomBytes(int(ph.params.saltLength))
 	if err != nil {
-		return "", fmt.Errorf("failed to generate salt: %w", err)
+		return "", fmt.Errorf("auth.Argon2PasswordHasher.HashPassword: failed to generate salt: %w", err)
 	}
 	hash := argon2.IDKey([]byte(password), salt, ph.params.iterations, ph.params.memory, ph.params.parallelism, ph.params.keyLength)
 
@@ -59,16 +59,16 @@ func (ph *Argon2PasswordHasher) HashPassword(password string) (string, error) {
 func (ph *Argon2PasswordHasher) VerifyPassword(hashedPassword, password string) error {
 	salt, hash, err := ph.decodeHash(hashedPassword)
 	if err != nil {
-		return fmt.Errorf("failed to decode hash: %w", err)
+		return fmt.Errorf("auth.Argon2PasswordHasher.VerifyPassword: failed to decode hash: %w", err)
 	}
 
 	otherHash := argon2.IDKey([]byte(password), salt, ph.params.iterations, ph.params.memory, ph.params.parallelism, ph.params.keyLength)
 	if err != nil {
-		return fmt.Errorf("failed to hash password for verification: %w", err)
+		return fmt.Errorf("auth.Argon2PasswordHasher.VerifyPassword: failed to hash password for verification: %w", err)
 	}
 
 	if subtle.ConstantTimeCompare(hash, otherHash) != 1 {
-		return fmt.Errorf("password does not match")
+		return fmt.Errorf("auth.Argon2PasswordHasher.VerifyPassword: password does not match")
 	}
 	return nil
 }
