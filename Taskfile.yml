@@ -48,6 +48,7 @@ tasks:
     desc: Clean build artifacts
     cmds:
       - rm -f {{.BINARY_NAME}}
+      - rm -rf ./tmp/
 
   lint:
     desc: Run linter

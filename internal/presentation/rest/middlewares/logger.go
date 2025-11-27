@@ -12,15 +12,6 @@ type LoggerSetter interface {
 	SetLogger(*zap.Logger)
 }
 
-func MustGetContextualLogger(c *gin.Context) *zap.Logger {
-	l, ok := c.Get("logger")
-	if !ok {
-		panic("logger not found in context")
-	}
-	logger, _ := l.(*zap.Logger)
-	return logger.With(zap.String("handler", "AuthHandler"))
-}
-
 func ZapLoggerMiddleware(base *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
@@ -50,12 +41,24 @@ func ZapLoggerMiddleware(base *zap.Logger) gin.HandlerFunc {
 		latency := end.Sub(start)
 
 		status := c.Writer.Status()
-		reqLogger.Info("Request completed",
+		entry := reqLogger.With(
 			zap.Int("status", status),
 			zap.Duration("latency", latency),
 			zap.String("client_ip", c.ClientIP()),
 			zap.String("user_agent", c.Request.UserAgent()),
-			zap.String("error", c.Errors.ByType(gin.ErrorTypePrivate).String()),
 		)
+
+		if len(c.Errors) > 0 {
+			entry = entry.With(zap.String("error", c.Errors.ByType(gin.ErrorTypeAny).String()))
+		}
+
+		switch {
+		case status >= 500:
+			entry.Error("Request failed")
+		case status >= 400:
+			entry.Warn("Client error")
+		default:
+			entry.Info("Request completed")
+		}
 	}
 }

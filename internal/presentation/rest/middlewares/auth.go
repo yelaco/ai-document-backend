@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/yelaco/ai-document-backend/internal/application/auth"
 	authInfra "github.com/yelaco/ai-document-backend/internal/infrastructure/auth"
+	reqContext "github.com/yelaco/ai-document-backend/internal/infrastructure/context"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/token"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/dtos"
 	"go.uber.org/zap"
@@ -60,8 +60,8 @@ func AuthMiddleware(tokenMaker token.Maker) gin.HandlerFunc {
 		}
 
 		ctx := c.Request.Context()
-		ctx = auth.WithUserID(ctx, claims.Sub)
-		ctx = auth.WithAuthClaims(ctx, &authInfra.AuthClaims{
+		ctx = reqContext.WithUserID(ctx, claims.Sub)
+		ctx = reqContext.WithAuthClaims(ctx, &authInfra.AuthClaims{
 			Email: claims.Email,
 			Role:  role,
 		})

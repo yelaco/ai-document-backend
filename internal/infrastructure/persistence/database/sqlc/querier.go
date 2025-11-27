@@ -11,13 +11,19 @@ import (
 )
 
 type Querier interface {
+	CountUserDocuments(ctx context.Context, userID uuid.UUID) (int64, error)
+	CreateDocument(ctx context.Context, arg CreateDocumentParams) (Document, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteDocument(ctx context.Context, arg DeleteDocumentParams) error
 	DeleteRefreshTokenByUserID(ctx context.Context, userID uuid.UUID) error
+	GetDocument(ctx context.Context, arg GetDocumentParams) (GetDocumentRow, error)
+	GetPaginatedDocuments(ctx context.Context, arg GetPaginatedDocumentsParams) ([]GetPaginatedDocumentsRow, error)
 	GetRefreshTokenHashByUserID(ctx context.Context, userID uuid.UUID) (GetRefreshTokenHashByUserIDRow, error)
 	GetUserByEmail(ctx context.Context, email string) (GetUserByEmailRow, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (GetUserByIDRow, error)
 	InsertRefreshToken(ctx context.Context, arg InsertRefreshTokenParams) error
 	RevokeRefreshTokenByUserID(ctx context.Context, userID uuid.UUID) error
+	UpdateDocumentStatus(ctx context.Context, arg UpdateDocumentStatusParams) (Document, error)
 }
 
 var _ Querier = (*Queries)(nil)

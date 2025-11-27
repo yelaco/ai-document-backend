@@ -3,6 +3,7 @@ package interfaces
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/yelaco/ai-document-backend/internal/domain/models/entity"
 )
 
@@ -13,5 +14,5 @@ type UserService interface {
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *entity.User) error
 	GetUserByEmail(ctx context.Context, email string) (*entity.User, error)
-	GetUserByID(ctx context.Context, id string) (*entity.User, error)
+	GetUserByID(ctx context.Context, id uuid.UUID) (*entity.User, error)
 }

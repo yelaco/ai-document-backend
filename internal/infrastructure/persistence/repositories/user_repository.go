@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
 	"github.com/yelaco/ai-document-backend/internal/domain/models/entity"
@@ -32,7 +33,7 @@ func (p *PostgresUserRepository) CreateUser(ctx context.Context, user *entity.Us
 		Role:         string(user.Role),
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create user: %w", err)
+		return fmt.Errorf("PostgresUserRepository.CreateUser: failed to create user: %w", err)
 	}
 	user.ID = row.ID
 	user.CreatedAt = row.CreatedAt
@@ -44,7 +45,7 @@ func (p *PostgresUserRepository) CreateUser(ctx context.Context, user *entity.Us
 func (p *PostgresUserRepository) GetUserByEmail(ctx context.Context, email string) (*entity.User, error) {
 	row, err := p.queries.GetUserByEmail(ctx, email)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user by email: %w", err)
+		return nil, fmt.Errorf("PostgresUserRepository.CreateUser: failed to get user by email: %w", err)
 	}
 	return &entity.User{
 		ID:           row.ID,
@@ -58,6 +59,18 @@ func (p *PostgresUserRepository) GetUserByEmail(ctx context.Context, email strin
 }
 
 // GetUserByID implements interfaces.UserRepository.
-func (p *PostgresUserRepository) GetUserByID(ctx context.Context, id string) (*entity.User, error) {
-	panic("unimplemented")
+func (p *PostgresUserRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
+	row, err := p.queries.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("PostgresUserRepository.CreateUser: failed to get user by ID: %w", err)
+	}
+	return &entity.User{
+		ID:           row.ID,
+		Email:        row.Email,
+		PasswordHash: row.PasswordHash,
+		FullName:     row.FullName,
+		Role:         auth.Role(row.Role),
+		CreatedAt:    row.CreatedAt,
+		UpdatedAt:    row.UpdatedAt,
+	}, nil
 }

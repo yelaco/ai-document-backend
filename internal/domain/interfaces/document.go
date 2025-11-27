@@ -8,13 +8,16 @@ import (
 )
 
 type DocumentService interface {
-	ProcessDocument(ctx context.Context, documentID string) (string, error)
-	CreateDocument(ctx context.Context, title string, userID uuid.UUID) (entity.Document, error)
+	ProcessDocument(ctx context.Context, documentID uuid.UUID) (string, error)
+	CreateDocument(ctx context.Context, title string) (entity.Document, error)
+	GetPaginatedDocuments(ctx context.Context, page int64, pageSize int64) ([]entity.Document, int64, error)
+	GetDocumentByID(ctx context.Context, documentID uuid.UUID) (entity.Document, error)
+	DeleteDocument(ctx context.Context, documentID uuid.UUID) error
 }
 
 type DocumentRepository interface {
 	CreateDocument(ctx context.Context, document *entity.Document) error
-	GetDocumentByID(ctx context.Context, documentID string) (string, error)
-	GetDocumentsByUserID(ctx context.Context, userID uuid.UUID) ([]entity.Document, error)
-	DeleteDocumentByID(ctx context.Context, documentID string) error
+	GetDocument(ctx context.Context, documentID uuid.UUID, userID uuid.UUID) (entity.Document, error)
+	GetPaginatedDocuments(ctx context.Context, userID uuid.UUID, skip int64, limit int64) ([]entity.Document, int64, error)
+	DeleteDocument(ctx context.Context, documentID uuid.UUID, userID uuid.UUID) error
 }

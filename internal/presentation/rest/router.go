@@ -64,7 +64,7 @@ func (r *Router) SetupRoutes(
 		{
 			documentRouter.Use(authMiddlware)
 			documentRouter.POST("/", documentHandler.UploadDocument)
-			documentRouter.GET("/", documentHandler.ListDocuments)
+			documentRouter.GET("/", documentHandler.GetPaginatedDocuments)
 			documentRouter.GET("/:id", documentHandler.GetDocumentByID)
 			documentRouter.DELETE("/:id", documentHandler.DeleteDocument)
 		}
