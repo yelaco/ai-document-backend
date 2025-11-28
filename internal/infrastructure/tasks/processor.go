@@ -5,6 +5,7 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
+	"github.com/yelaco/ai-document-backend/internal/infrastructure/rag"
 	"go.uber.org/zap"
 )
 
@@ -33,6 +34,8 @@ type AsynqProcessor struct {
 	server       *asynq.Server
 	logger       *zap.Logger
 	documentRepo interfaces.DocumentRepository
+	ragEmbedder  rag.Embedder
+	ragStore     rag.Store
 }
 
 func NewAsynqProcessor(opt asynq.RedisClientOpt, logger *zap.Logger, documentRepo interfaces.DocumentRepository) TaskProcessor {
@@ -50,10 +53,12 @@ func NewAsynqProcessor(opt asynq.RedisClientOpt, logger *zap.Logger, documentRep
 			)
 		}),
 	})
+	embedder := rag.NewChromaEmbedder()
 	return &AsynqProcessor{
 		server:       server,
 		logger:       logger,
 		documentRepo: documentRepo,
+		ragEmbedder:  embedder,
 	}
 }
 

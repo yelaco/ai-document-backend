@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
+	"github.com/yelaco/ai-document-backend/pkg/extractor"
 	"go.uber.org/zap"
 )
 
@@ -65,5 +67,27 @@ func (processor *AsynqProcessor) ProcessTaskEmbedDocument(ctx context.Context, t
 		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to get document: %w", err)
 	}
 	processor.logger.Info("Processing document", zap.String("name", document.OriginalName))
+
+	// read file content and extract text
+	file, err := os.Open(document.SavePath)
+	if err != nil {
+		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to open document file: %w", err)
+	}
+	defer file.Close()
+	defer os.Remove(document.SavePath)
+
+	extractedText, err := extractor.ExtractTextFromFile(document.OriginalName, file)
+	if err != nil {
+		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to extract text: %w", err)
+	}
+
+	embeddings, err := processor.ragEmbedder.Embed(ctx, []string{extractedText})
+	if err != nil {
+		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to embed document: %w", err)
+	}
+	err = processor.ragStore.StoreDocumentEmbeddings(ctx, embeddings)
+	if err != nil {
+		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to store document embeddings: %w", err)
+	}
 	return nil
 }
