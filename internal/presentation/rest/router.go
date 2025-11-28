@@ -3,6 +3,7 @@ package rest
 import (
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/requestid"
 	"github.com/gin-gonic/gin"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/token"
@@ -23,7 +24,14 @@ func NewRouter(logger *zap.Logger) *Router {
 		engine: gin.New(),
 	}
 	r.engine.Use(gin.Recovery())
+	r.engine.Use(cors.New(cors.Config{
+		AllowOrigins:           []string{"*"},
+		AllowCredentials:       true,
+		AllowBrowserExtensions: false,
+		AllowFiles:             true,
+	}))
 	r.engine.Use(requestid.New())
+	r.engine.MaxMultipartMemory = 32 << 20 // 32 MiB
 	return &r
 }
 

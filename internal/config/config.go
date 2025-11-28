@@ -18,6 +18,7 @@ type Config struct {
 	App      AppConfig      `mapstructure:"app"`
 	Database DatabaseConfig `mapstructure:"database"`
 	Token    TokenConfig    `mapstructure:"token"`
+	Redis    RedisConfig    `mapstructure:"redis"`
 }
 
 type AppConfig struct {
@@ -31,6 +32,12 @@ type DatabaseConfig struct {
 	Host     string `mapstructure:"host"`
 	Port     string `mapstructure:"port"`
 	User     string `mapstructure:"user"`
+	Password string `mapstructure:"password"`
+}
+
+type RedisConfig struct {
+	Host     string `mapstructure:"host"`
+	Port     string `mapstructure:"port"`
 	Password string `mapstructure:"password"`
 }
 

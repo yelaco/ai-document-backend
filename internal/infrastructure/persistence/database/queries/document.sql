@@ -1,14 +1,15 @@
 -- name: CreateDocument :one
 INSERT INTO documents (
-    title,
+    original_name,
+	save_path,
     status,
     user_id
 ) VALUES (
-  $1, $2, $3
+  $1, $2, $3, $4
 ) RETURNING *;
 
 -- name: GetPaginatedDocuments :many
-SELECT id, title, user_id, status, created_at, updated_at
+SELECT id, original_name, save_path, user_id, status, created_at, updated_at
 FROM documents
 WHERE user_id = $1
 ORDER BY created_at DESC
@@ -20,7 +21,7 @@ FROM documents
 WHERE user_id = $1;
 
 -- name: GetDocument :one
-SELECT id, title, user_id, status, created_at, updated_at
+SELECT id, original_name, save_path, user_id, status, created_at, updated_at
 FROM documents
 WHERE id = $1 AND user_id = $2
 LIMIT 1;

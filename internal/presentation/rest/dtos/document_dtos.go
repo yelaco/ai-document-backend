@@ -11,20 +11,20 @@ type PaginatedDocumentsParams struct {
 }
 
 type DocumentResponse struct {
-	ID        string `json:"id"`
-	UserID    string `json:"user_id"`
-	Title     string `json:"title"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
+	ID           string `json:"id"`
+	UserID       string `json:"user_id"`
+	OriginalName string `json:"title"`
+	CreatedAt    string `json:"created_at"`
+	UpdatedAt    string `json:"updated_at"`
 }
 
 func DocumentResponseFromEntity(doc entity.Document) DocumentResponse {
 	return DocumentResponse{
-		ID:        doc.ID.String(),
-		UserID:    doc.UserID.String(),
-		Title:     doc.Title,
-		CreatedAt: doc.CreatedAt.Format(time.RFC3339),
-		UpdatedAt: doc.CreatedAt.Format(time.RFC3339),
+		ID:           doc.ID.String(),
+		UserID:       doc.UserID.String(),
+		OriginalName: doc.OriginalName,
+		CreatedAt:    doc.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:    doc.CreatedAt.Format(time.RFC3339),
 	}
 }
 

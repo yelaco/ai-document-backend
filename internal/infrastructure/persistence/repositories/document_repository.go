@@ -27,8 +27,9 @@ func NewDocumentRepository(connPool *pgxpool.Pool) interfaces.DocumentRepository
 // CreateDocument implements interfaces.DocumentRepository.
 func (p *PostgresDocumentRepository) CreateDocument(ctx context.Context, document *entity.Document) error {
 	row, err := p.queries.CreateDocument(ctx, sqlc.CreateDocumentParams{
-		Title:  document.Title,
-		UserID: document.UserID,
+		OriginalName: document.OriginalName,
+		SavePath:     document.SavePath,
+		UserID:       document.UserID,
 	})
 	if err != nil {
 		return fmt.Errorf("PostgresDocumentRepository.CreateDocument: failed to create document: %w", err)
@@ -49,11 +50,12 @@ func (p *PostgresDocumentRepository) GetDocument(ctx context.Context, documentID
 		return entity.Document{}, fmt.Errorf("PostgresDocumentRepository.GetDocument: failed to get document: %w", err)
 	}
 	return entity.Document{
-		ID:        row.ID,
-		Title:     row.Title,
-		UserID:    row.UserID,
-		CreatedAt: row.CreatedAt,
-		UpdatedAt: row.UpdatedAt,
+		ID:           row.ID,
+		OriginalName: row.OriginalName,
+		SavePath:     row.SavePath,
+		UserID:       row.UserID,
+		CreatedAt:    row.CreatedAt,
+		UpdatedAt:    row.UpdatedAt,
 	}, nil
 }
 
@@ -73,12 +75,13 @@ func (p *PostgresDocumentRepository) GetPaginatedDocuments(ctx context.Context, 
 	}
 	documents := lo.Map(rows, func(row sqlc.GetPaginatedDocumentsRow, _ int) entity.Document {
 		return entity.Document{
-			ID:        row.ID,
-			Title:     row.Title,
-			Status:    row.Status,
-			UserID:    row.UserID,
-			CreatedAt: row.CreatedAt,
-			UpdatedAt: row.UpdatedAt,
+			ID:           row.ID,
+			OriginalName: row.OriginalName,
+			SavePath:     row.SavePath,
+			Status:       row.Status,
+			UserID:       row.UserID,
+			CreatedAt:    row.CreatedAt,
+			UpdatedAt:    row.UpdatedAt,
 		}
 	})
 

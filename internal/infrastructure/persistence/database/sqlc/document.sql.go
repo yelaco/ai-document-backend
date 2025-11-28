@@ -27,26 +27,34 @@ func (q *Queries) CountUserDocuments(ctx context.Context, userID uuid.UUID) (int
 
 const createDocument = `-- name: CreateDocument :one
 INSERT INTO documents (
-    title,
+    original_name,
+	save_path,
     status,
     user_id
 ) VALUES (
-  $1, $2, $3
-) RETURNING id, title, status, user_id, created_at, updated_at
+  $1, $2, $3, $4
+) RETURNING id, original_name, save_path, status, user_id, created_at, updated_at
 `
 
 type CreateDocumentParams struct {
-	Title  string    `json:"title"`
-	Status string    `json:"status"`
-	UserID uuid.UUID `json:"user_id"`
+	OriginalName string    `json:"original_name"`
+	SavePath     string    `json:"save_path"`
+	Status       string    `json:"status"`
+	UserID       uuid.UUID `json:"user_id"`
 }
 
 func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) (Document, error) {
-	row := q.db.QueryRow(ctx, createDocument, arg.Title, arg.Status, arg.UserID)
+	row := q.db.QueryRow(ctx, createDocument,
+		arg.OriginalName,
+		arg.SavePath,
+		arg.Status,
+		arg.UserID,
+	)
 	var i Document
 	err := row.Scan(
 		&i.ID,
-		&i.Title,
+		&i.OriginalName,
+		&i.SavePath,
 		&i.Status,
 		&i.UserID,
 		&i.CreatedAt,
@@ -71,7 +79,7 @@ func (q *Queries) DeleteDocument(ctx context.Context, arg DeleteDocumentParams) 
 }
 
 const getDocument = `-- name: GetDocument :one
-SELECT id, title, user_id, status, created_at, updated_at
+SELECT id, original_name, save_path, user_id, status, created_at, updated_at
 FROM documents
 WHERE id = $1 AND user_id = $2
 LIMIT 1
@@ -83,12 +91,13 @@ type GetDocumentParams struct {
 }
 
 type GetDocumentRow struct {
-	ID        uuid.UUID `json:"id"`
-	Title     string    `json:"title"`
-	UserID    uuid.UUID `json:"user_id"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID           uuid.UUID `json:"id"`
+	OriginalName string    `json:"original_name"`
+	SavePath     string    `json:"save_path"`
+	UserID       uuid.UUID `json:"user_id"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 func (q *Queries) GetDocument(ctx context.Context, arg GetDocumentParams) (GetDocumentRow, error) {
@@ -96,7 +105,8 @@ func (q *Queries) GetDocument(ctx context.Context, arg GetDocumentParams) (GetDo
 	var i GetDocumentRow
 	err := row.Scan(
 		&i.ID,
-		&i.Title,
+		&i.OriginalName,
+		&i.SavePath,
 		&i.UserID,
 		&i.Status,
 		&i.CreatedAt,
@@ -106,7 +116,7 @@ func (q *Queries) GetDocument(ctx context.Context, arg GetDocumentParams) (GetDo
 }
 
 const getPaginatedDocuments = `-- name: GetPaginatedDocuments :many
-SELECT id, title, user_id, status, created_at, updated_at
+SELECT id, original_name, save_path, user_id, status, created_at, updated_at
 FROM documents
 WHERE user_id = $1
 ORDER BY created_at DESC
@@ -120,12 +130,13 @@ type GetPaginatedDocumentsParams struct {
 }
 
 type GetPaginatedDocumentsRow struct {
-	ID        uuid.UUID `json:"id"`
-	Title     string    `json:"title"`
-	UserID    uuid.UUID `json:"user_id"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID           uuid.UUID `json:"id"`
+	OriginalName string    `json:"original_name"`
+	SavePath     string    `json:"save_path"`
+	UserID       uuid.UUID `json:"user_id"`
+	Status       string    `json:"status"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 func (q *Queries) GetPaginatedDocuments(ctx context.Context, arg GetPaginatedDocumentsParams) ([]GetPaginatedDocumentsRow, error) {
@@ -139,7 +150,8 @@ func (q *Queries) GetPaginatedDocuments(ctx context.Context, arg GetPaginatedDoc
 		var i GetPaginatedDocumentsRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.Title,
+			&i.OriginalName,
+			&i.SavePath,
 			&i.UserID,
 			&i.Status,
 			&i.CreatedAt,
@@ -159,7 +171,7 @@ const updateDocumentStatus = `-- name: UpdateDocumentStatus :one
 UPDATE documents
 SET status = $2, updated_at = NOW()
 WHERE id = $1
-RETURNING id, title, status, user_id, created_at, updated_at
+RETURNING id, original_name, save_path, status, user_id, created_at, updated_at
 `
 
 type UpdateDocumentStatusParams struct {
@@ -172,7 +184,8 @@ func (q *Queries) UpdateDocumentStatus(ctx context.Context, arg UpdateDocumentSt
 	var i Document
 	err := row.Scan(
 		&i.ID,
-		&i.Title,
+		&i.OriginalName,
+		&i.SavePath,
 		&i.Status,
 		&i.UserID,
 		&i.CreatedAt,

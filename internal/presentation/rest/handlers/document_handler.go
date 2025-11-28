@@ -8,22 +8,24 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
-	"github.com/yelaco/ai-document-backend/internal/domain/models/entity"
+	"github.com/yelaco/ai-document-backend/internal/infrastructure/tasks"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/dtos"
 )
 
 type DocumentHandler struct {
 	documentService interfaces.DocumentService
+	taskDistributor tasks.TaskDistributor
 }
 
-func NewDocumentHandler(documentService interfaces.DocumentService) *DocumentHandler {
+func NewDocumentHandler(documentService interfaces.DocumentService, taskDistributor tasks.TaskDistributor) *DocumentHandler {
 	return &DocumentHandler{
 		documentService: documentService,
+		taskDistributor: taskDistributor,
 	}
 }
 
 func (h *DocumentHandler) UploadDocument(c *gin.Context) {
-	form, err := c.MultipartForm()
+	file, err := c.FormFile("file")
 	if err != nil {
 		_ = c.Error(fmt.Errorf("invalid multipart form: %w", err))
 		c.JSON(http.StatusBadRequest, dtos.BaseErrorResponse{
@@ -36,43 +38,50 @@ func (h *DocumentHandler) UploadDocument(c *gin.Context) {
 		return
 	}
 
-	documents := make([]entity.Document, len(form.File["file"]))
-	for _, file := range form.File["files"] {
-		ext := filepath.Ext(file.Filename)
-		tempFileName := fmt.Sprintf("%s_%s", uuid.New().String(), ext)
-		savePath := filepath.Join("./tmp", tempFileName)
-		if err := c.SaveUploadedFile(file, savePath); err != nil {
-			_ = c.Error(fmt.Errorf("DocumentHandler.UploadDocument: failed to save uploaded file: %w", err))
-			c.JSON(http.StatusInternalServerError, dtos.BaseErrorResponse{
-				Status: dtos.StatusError,
-				Error: dtos.ErrorResponse{
-					ErrorCode:    http.StatusInternalServerError,
-					ErrorMessage: "failed to save uploaded file",
-				},
-			})
-			return
-		}
-
-		document, err := h.documentService.CreateDocument(c.Request.Context(), file.Filename)
-		if err != nil {
-			_ = c.Error(fmt.Errorf("DocumentHandler.UploadDocument: failed to create document: %w", err))
-			c.JSON(http.StatusInternalServerError, dtos.BaseErrorResponse{
-				Status: dtos.StatusError,
-				Error: dtos.ErrorResponse{
-					ErrorCode:    http.StatusInternalServerError,
-					ErrorMessage: "failed to create document",
-				},
-			})
-			return
-		}
-		documents = append(documents, document)
+	ext := filepath.Ext(file.Filename)
+	tempFileName := fmt.Sprintf("%s_%s", uuid.New().String(), ext)
+	savePath := filepath.Join("./tmp", tempFileName)
+	if err := c.SaveUploadedFile(file, savePath); err != nil {
+		_ = c.Error(fmt.Errorf("DocumentHandler.UploadDocument: failed to save uploaded file: %w", err))
+		c.JSON(http.StatusInternalServerError, dtos.BaseErrorResponse{
+			Status: dtos.StatusError,
+			Error: dtos.ErrorResponse{
+				ErrorCode:    http.StatusInternalServerError,
+				ErrorMessage: "failed to save uploaded file",
+			},
+		})
+		return
 	}
+
+	ctx := c.Request.Context()
+	document, err := h.documentService.CreateDocument(ctx, file.Filename, savePath)
+	if err != nil {
+		_ = c.Error(fmt.Errorf("DocumentHandler.UploadDocument: failed to create document: %w", err))
+		c.JSON(http.StatusInternalServerError, dtos.BaseErrorResponse{
+			Status: dtos.StatusError,
+			Error: dtos.ErrorResponse{
+				ErrorCode:    http.StatusInternalServerError,
+				ErrorMessage: "failed to create document",
+			},
+		})
+		return
+	}
+
+	// distribute embedding task to processor
+	taskPayload := tasks.PayloadEmbedDocument{
+		DocumentID: document.ID,
+		UserID:     document.UserID,
+	}
+	procOpt := tasks.TaskProcessingOption{
+		Queue:     tasks.QueueDefault,
+		MaxRetry:  5,
+		ProcessIn: 10, // process after 10 seconds
+	}
+	_ = h.taskDistributor.DistributeTaskEmbedDocument(ctx, &taskPayload, procOpt)
 
 	c.JSON(http.StatusOK, dtos.BaseAPIResponse{
 		Status: dtos.StatusSuccess,
-		Data: gin.H{
-			"documents": dtos.DocumentResponsesFromEntities(documents),
-		},
+		Data:   dtos.DocumentResponseFromEntity(document),
 	})
 }
 

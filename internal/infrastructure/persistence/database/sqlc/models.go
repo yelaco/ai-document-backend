@@ -12,12 +12,13 @@ import (
 )
 
 type Document struct {
-	ID        uuid.UUID `json:"id"`
-	Title     string    `json:"title"`
-	Status    string    `json:"status"`
-	UserID    uuid.UUID `json:"user_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID           uuid.UUID `json:"id"`
+	OriginalName string    `json:"original_name"`
+	SavePath     string    `json:"save_path"`
+	Status       string    `json:"status"`
+	UserID       uuid.UUID `json:"user_id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
 }
 
 type RefreshToken struct {
