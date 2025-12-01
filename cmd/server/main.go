@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	chromago "github.com/amikos-tech/chroma-go"
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/yelaco/ai-document-backend/internal/application/auth"
@@ -15,6 +16,7 @@ import (
 	"github.com/yelaco/ai-document-backend/internal/config"
 	authInfra "github.com/yelaco/ai-document-backend/internal/infrastructure/auth"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/persistence/repositories"
+	"github.com/yelaco/ai-document-backend/internal/infrastructure/rag"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/tasks"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/token"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest"
@@ -36,6 +38,8 @@ func main() {
 
 	// load config
 	cfg := config.MustLoadConfig("./configs")
+
+	fmt.Println("HERE", cfg.AI.GeminiAPIKey)
 
 	// setup logger
 	logger := logger.NewLogger(cfg.App.Env)
@@ -67,11 +71,19 @@ func main() {
 		logger.Fatal("failed to create token maker:", zap.Error(err))
 	}
 
+	// setup chroma client
+	chromaClient, err := chromago.NewClient()
+	if err != nil {
+		logger.Fatal("failed to create chroma client:", zap.Error(err))
+	}
+
 	// setup dependencies
 	passwordHasher := authInfra.NewArgon2PasswordHasher()
 	userRepo := repositories.NewPostgresUserRepository(connPool)
 	refreshTokenRepo := repositories.NewRefreshTokenRepository(connPool)
 	documentRepo := repositories.NewDocumentRepository(connPool)
+	ragEmbedder := rag.NewChromaEmbedder(cfg.AI.GeminiAPIKey)
+	ragStore := rag.NewChromaStore(chromaClient)
 
 	// setup background task processor
 	redisOpt := asynq.RedisClientOpt{
@@ -79,7 +91,7 @@ func main() {
 		Password: cfg.Redis.Password,
 	}
 	taskDistributor := tasks.NewAsynqTaskDistributor(redisOpt, logger)
-	taskProcessor := tasks.NewAsynqProcessor(redisOpt, logger, documentRepo)
+	taskProcessor := tasks.NewAsynqProcessor(redisOpt, logger, documentRepo, ragEmbedder, ragStore)
 
 	// inject dependencies
 	authService := auth.NewAuthService(userRepo, refreshTokenRepo, passwordHasher, tokenMaker)

@@ -13,7 +13,7 @@ type PaginatedDocumentsParams struct {
 type DocumentResponse struct {
 	ID           string `json:"id"`
 	UserID       string `json:"user_id"`
-	OriginalName string `json:"title"`
+	OriginalName string `json:"original_name"`
 	CreatedAt    string `json:"created_at"`
 	UpdatedAt    string `json:"updated_at"`
 }

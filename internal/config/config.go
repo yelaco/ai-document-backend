@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -17,8 +18,9 @@ const (
 type Config struct {
 	App      AppConfig      `mapstructure:"app"`
 	Database DatabaseConfig `mapstructure:"database"`
-	Token    TokenConfig    `mapstructure:"token"`
 	Redis    RedisConfig    `mapstructure:"redis"`
+	Token    TokenConfig    `mapstructure:"token"`
+	AI       AIConfig       `mapstructure:"AI"`
 }
 
 type AppConfig struct {
@@ -41,8 +43,12 @@ type RedisConfig struct {
 	Password string `mapstructure:"password"`
 }
 
+type AIConfig struct {
+	GeminiAPIKey string `mapstructure:"GEMINI_API_KEY"`
+}
+
 type TokenConfig struct {
-	PasetoV4LocalKey string `mapstructure:"PASETO_V4_LOCAL_KEY"`
+	PasetoV4LocalKey string `mapstructure:"paseto_v4_local_key"`
 }
 
 // MustLoadConfig reads configurations from file or environment variables
@@ -52,8 +58,10 @@ func MustLoadConfig(path string) *Config {
 	viper.SetConfigName("server")
 	viper.SetConfigType("yaml")
 
+	viper.AddConfigPath(".")
 	viper.SetDefault("app.env", DevEnv)
 	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	err := viper.ReadInConfig()
 	if err != nil {

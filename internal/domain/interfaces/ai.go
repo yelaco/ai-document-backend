@@ -1,6 +1,8 @@
 package interfaces
 
-type AIService interface {
-	GenerateText(prompt string) (string, error)
-	GenerateImage(description string) ([]byte, error)
+import "context"
+
+type AIGateway interface {
+	GenerateText(ctx context.Context, prompt string) (string, error)
+	GenerateImage(ctx context.Context, description string) ([]byte, error)
 }

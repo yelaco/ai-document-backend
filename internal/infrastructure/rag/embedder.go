@@ -21,11 +21,14 @@ type ChromaEmbedder struct {
 	embedder *g.GeminiEmbeddingFunction
 }
 
-func NewChromaEmbedder() Embedder {
-	geminiEmbedder, _ := g.NewGeminiEmbeddingFunction(
-		g.WithEnvAPIKey(),
+func NewChromaEmbedder(apiKey string) Embedder {
+	geminiEmbedder, err := g.NewGeminiEmbeddingFunction(
+		g.WithAPIKey(apiKey),
 		g.WithDefaultModel(embeddings.EmbeddingModel(geminiEmbeddingModel)),
 	)
+	if err != nil {
+		panic(fmt.Sprintf("failed to create Gemini embedding function: %v", err))
+	}
 	return &ChromaEmbedder{
 		embedder: geminiEmbedder,
 	}

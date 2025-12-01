@@ -89,5 +89,6 @@ func (processor *AsynqProcessor) ProcessTaskEmbedDocument(ctx context.Context, t
 	if err != nil {
 		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to store document embeddings: %w", err)
 	}
+	processor.logger.Info("Processed document successfully", zap.String("document_id", document.ID.String()))
 	return nil
 }
