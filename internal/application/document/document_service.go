@@ -21,11 +21,11 @@ func NewDocumentService(documentRepo interfaces.DocumentRepository) interfaces.D
 }
 
 // CreateDocument implements interfaces.DocumentService.
-func (d *DocumentService) CreateDocument(ctx context.Context, title string, savePath string) (entity.Document, error) {
+func (d *DocumentService) CreateDocument(ctx context.Context, originalName string, savePath string) (entity.Document, error) {
 	userID := reqContext.UserIDMustFromContext(ctx)
 	document := entity.Document{
 		UserID:       userID,
-		OriginalName: title,
+		OriginalName: originalName,
 		SavePath:     savePath,
 	}
 	if err := d.documentRepo.CreateDocument(ctx, &document); err != nil {

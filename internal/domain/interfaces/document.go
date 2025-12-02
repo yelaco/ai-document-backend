@@ -8,7 +8,7 @@ import (
 )
 
 type DocumentService interface {
-	CreateDocument(ctx context.Context, title string, savePath string) (entity.Document, error)
+	CreateDocument(ctx context.Context, originalName string, savePath string) (entity.Document, error)
 	GetPaginatedDocuments(ctx context.Context, page int64, pageSize int64) ([]entity.Document, int64, error)
 	GetDocumentByID(ctx context.Context, documentID uuid.UUID) (entity.Document, error)
 	DeleteDocument(ctx context.Context, documentID uuid.UUID) error

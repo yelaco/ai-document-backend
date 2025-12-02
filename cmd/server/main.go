@@ -8,7 +8,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	chromago "github.com/amikos-tech/chroma-go"
+	chroma "github.com/amikos-tech/chroma-go/pkg/api/v2"
+	chromaLogger "github.com/amikos-tech/chroma-go/pkg/logger"
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/yelaco/ai-document-backend/internal/application/auth"
@@ -38,8 +39,6 @@ func main() {
 
 	// load config
 	cfg := config.MustLoadConfig("./configs")
-
-	fmt.Println("HERE", cfg.AI.GeminiAPIKey)
 
 	// setup logger
 	logger := logger.NewLogger(cfg.App.Env)
@@ -72,7 +71,10 @@ func main() {
 	}
 
 	// setup chroma client
-	chromaClient, err := chromago.NewClient()
+	chromaClient, err := chroma.NewHTTPClient(
+		chroma.WithBaseURL("http://localhost:8000"),
+		chroma.WithLogger(chromaLogger.NewZapLogger(logger)),
+	)
 	if err != nil {
 		logger.Fatal("failed to create chroma client:", zap.Error(err))
 	}

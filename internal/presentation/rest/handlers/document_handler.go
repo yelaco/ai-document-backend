@@ -39,7 +39,7 @@ func (h *DocumentHandler) UploadDocument(c *gin.Context) {
 	}
 
 	ext := filepath.Ext(file.Filename)
-	tempFileName := fmt.Sprintf("%s_%s", uuid.New().String(), ext)
+	tempFileName := fmt.Sprintf("%s%s", uuid.New().String(), ext)
 	savePath := filepath.Join("./tmp", tempFileName)
 	if err := c.SaveUploadedFile(file, savePath); err != nil {
 		_ = c.Error(fmt.Errorf("DocumentHandler.UploadDocument: failed to save uploaded file: %w", err))

@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
 	"github.com/yelaco/ai-document-backend/pkg/extractor"
+	"github.com/yelaco/ai-document-backend/pkg/util"
 	"go.uber.org/zap"
 )
 
@@ -81,7 +82,16 @@ func (processor *AsynqProcessor) ProcessTaskEmbedDocument(ctx context.Context, t
 		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to extract text: %w", err)
 	}
 
-	embeddings, err := processor.ragEmbedder.Embed(ctx, []string{extractedText})
+	// Split the extracted text into chunks using recursive character text splitter
+	splitter := util.NewRecursiveCharacterTextSplitter(500, 100)
+	textChunks := splitter.SplitText(extractedText)
+
+	processor.logger.Info("Split document into chunks",
+		zap.String("document_id", document.ID.String()),
+		zap.Int("chunk_count", len(textChunks)),
+		zap.Int("original_length", len(extractedText)))
+
+	embeddings, err := processor.ragEmbedder.Embed(ctx, textChunks)
 	if err != nil {
 		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to embed document: %w", err)
 	}

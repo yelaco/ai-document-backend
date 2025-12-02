@@ -2,8 +2,9 @@ package config
 
 import (
 	"fmt"
-	"strings"
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -20,7 +21,7 @@ type Config struct {
 	Database DatabaseConfig `mapstructure:"database"`
 	Redis    RedisConfig    `mapstructure:"redis"`
 	Token    TokenConfig    `mapstructure:"token"`
-	AI       AIConfig       `mapstructure:"AI"`
+	AI       AIConfig       `mapstructure:"ai"`
 }
 
 type AppConfig struct {
@@ -44,26 +45,29 @@ type RedisConfig struct {
 }
 
 type AIConfig struct {
-	GeminiAPIKey string `mapstructure:"GEMINI_API_KEY"`
+	GeminiAPIKey string
 }
 
 type TokenConfig struct {
-	PasetoV4LocalKey string `mapstructure:"paseto_v4_local_key"`
+	PasetoV4LocalKey string
 }
 
 // MustLoadConfig reads configurations from file or environment variables
 func MustLoadConfig(path string) *Config {
+	err := godotenv.Load(".env")
+	if err != nil {
+		panic(".env file not found")
+	}
+
 	cfg := new(Config)
 	viper.AddConfigPath(path)
 	viper.SetConfigName("server")
 	viper.SetConfigType("yaml")
 
-	viper.AddConfigPath(".")
 	viper.SetDefault("app.env", DevEnv)
 	viper.AutomaticEnv()
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	err := viper.ReadInConfig()
+	err = viper.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("error reading config file: %v", err))
 	}
@@ -72,5 +76,9 @@ func MustLoadConfig(path string) *Config {
 	if err != nil {
 		panic(fmt.Errorf("unable to decode into struct: %v", err))
 	}
+
+	cfg.AI.GeminiAPIKey = os.Getenv("GEMINI_API_KEY")
+	cfg.Token.PasetoV4LocalKey = os.Getenv("PASETO_V4_LOCAL_KEY")
+
 	return cfg
 }
