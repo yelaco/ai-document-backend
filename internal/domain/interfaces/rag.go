@@ -1,9 +1,13 @@
 package interfaces
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 type RagStore interface {
-	StoreDocumentEmbeddings(ctx context.Context, embeddings [][]float32) error
+	StoreDocumentEmbeddings(ctx context.Context, documentID uuid.UUID, embeddings [][]float32) error
 }
 
 type RagEmbedder interface {
@@ -11,5 +15,5 @@ type RagEmbedder interface {
 }
 
 type RagRetriever interface {
-	Retrieve(ctx context.Context, query string, topK int) ([]string, error)
+	RetrieveDocumentContent(ctx context.Context, documentID uuid.UUID, query string, topK int) ([]string, error)
 }

@@ -7,22 +7,19 @@ import (
 	"github.com/amikos-tech/chroma-go/pkg/embeddings"
 	g "github.com/amikos-tech/chroma-go/pkg/embeddings/gemini"
 	"github.com/samber/lo"
+	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
 )
 
 const (
 	geminiEmbeddingModel = "gemini-embedding-001"
 )
 
-type Embedder interface {
-	Embed(ctx context.Context, documents []string) ([][]float32, error)
-}
-
 type ChromaEmbedder struct {
-	embedder *g.GeminiEmbeddingFunction
+	embedFunc *g.GeminiEmbeddingFunction
 }
 
-func NewChromaEmbedder(apiKey string) Embedder {
-	geminiEmbedder, err := g.NewGeminiEmbeddingFunction(
+func NewChromaEmbedder(apiKey string) interfaces.RagEmbedder {
+	geminiEmbedFunc, err := g.NewGeminiEmbeddingFunction(
 		g.WithAPIKey(apiKey),
 		g.WithDefaultModel(embeddings.EmbeddingModel(geminiEmbeddingModel)),
 	)
@@ -30,12 +27,12 @@ func NewChromaEmbedder(apiKey string) Embedder {
 		panic(fmt.Sprintf("failed to create Gemini embedding function: %v", err))
 	}
 	return &ChromaEmbedder{
-		embedder: geminiEmbedder,
+		embedFunc: geminiEmbedFunc,
 	}
 }
 
 func (e *ChromaEmbedder) Embed(ctx context.Context, documents []string) ([][]float32, error) {
-	result, err := e.embedder.EmbedDocuments(ctx, documents)
+	result, err := e.embedFunc.EmbedDocuments(ctx, documents)
 	if err != nil {
 		return nil, fmt.Errorf("ChromaGeminiEmbedder.Embed: failed to embed documents: %w", err)
 	}

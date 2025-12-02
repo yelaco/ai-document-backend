@@ -78,6 +78,14 @@ func main() {
 	if err != nil {
 		logger.Fatal("failed to create chroma client:", zap.Error(err))
 	}
+	if err := chromaClient.Heartbeat(ctx); err != nil {
+		logger.Fatal("failed to heartbeat chroma client:", zap.Error(err))
+	}
+	defer func() {
+		if err := chromaClient.Close(); err != nil {
+			logger.Error("failed to close chroma client:", zap.Error(err))
+		}
+	}()
 
 	// setup dependencies
 	passwordHasher := authInfra.NewArgon2PasswordHasher()

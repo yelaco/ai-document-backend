@@ -95,7 +95,7 @@ func (processor *AsynqProcessor) ProcessTaskEmbedDocument(ctx context.Context, t
 	if err != nil {
 		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to embed document: %w", err)
 	}
-	err = processor.ragStore.StoreDocumentEmbeddings(ctx, embeddings)
+	err = processor.ragStore.StoreDocumentEmbeddings(ctx, document.ID, embeddings)
 	if err != nil {
 		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to store document embeddings: %w", err)
 	}
