@@ -13,7 +13,9 @@ import (
 	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/yelaco/ai-document-backend/internal/application/auth"
+	"github.com/yelaco/ai-document-backend/internal/application/chat"
 	"github.com/yelaco/ai-document-backend/internal/application/document"
+	"github.com/yelaco/ai-document-backend/internal/application/message"
 	"github.com/yelaco/ai-document-backend/internal/config"
 	authInfra "github.com/yelaco/ai-document-backend/internal/infrastructure/auth"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/persistence/repositories"
@@ -92,8 +94,10 @@ func main() {
 	userRepo := repositories.NewPostgresUserRepository(connPool)
 	refreshTokenRepo := repositories.NewRefreshTokenRepository(connPool)
 	documentRepo := repositories.NewDocumentRepository(connPool)
+	chatRepo := repositories.NewChatRepository(connPool)
 	ragEmbedder := rag.NewChromaEmbedder(cfg.AI.GeminiAPIKey)
 	ragStore := rag.NewChromaStore(chromaClient)
+	ragRetriever := rag.NewChromaRetriever(chromaClient, cfg.AI.GeminiAPIKey)
 
 	// setup background task processor
 	redisOpt := asynq.RedisClientOpt{
@@ -106,13 +110,16 @@ func main() {
 	// inject dependencies
 	authService := auth.NewAuthService(userRepo, refreshTokenRepo, passwordHasher, tokenMaker)
 	documentService := document.NewDocumentService(documentRepo)
+	messageService := message.NewMessageService()
+	chatService := chat.NewChatService(chatRepo, ragRetriever, messageService)
 	userHandler := handlers.NewUserHandler()
 	authHandler := handlers.NewAuthHandler(authService)
 	documentHandler := handlers.NewDocumentHandler(documentService, taskDistributor)
+	sseHandler := handlers.NewSSEHandler(logger, chatService)
 
 	// setup router and server
 	router := rest.NewRouter(logger)
-	router.SetupRoutes(tokenMaker, userHandler, authHandler, documentHandler)
+	router.SetupRoutes(tokenMaker, userHandler, authHandler, documentHandler, sseHandler)
 	addr := fmt.Sprintf("%s:%s", cfg.App.Host, cfg.App.Port)
 	server := server.NewServer(logger, addr, router)
 

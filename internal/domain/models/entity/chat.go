@@ -3,14 +3,14 @@ package entity
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/types"
 )
 
 type Chat struct {
-	ID         uuid.UUID
+	ID         types.ChatID
 	Title      string
-	DocumentID uuid.UUID
-	UserID     uuid.UUID
+	DocumentID types.DocumentID
+	UserID     types.UserID
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }

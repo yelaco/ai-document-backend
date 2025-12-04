@@ -31,10 +31,14 @@ func NewChromaEmbedder(apiKey string) interfaces.RagEmbedder {
 	}
 }
 
-func (e *ChromaEmbedder) Embed(ctx context.Context, documents []string) ([][]float32, error) {
+func (e *ChromaEmbedder) GetDocumentEmbeddings(ctx context.Context, documentPath string) ([][]float32, error) {
+	// This is a placeholder implementation - you'll need to implement document reading
+	// and chunking based on the documentPath
+	documents := []string{"placeholder document content"} // TODO: implement document reading
+
 	result, err := e.embedFunc.EmbedDocuments(ctx, documents)
 	if err != nil {
-		return nil, fmt.Errorf("ChromaGeminiEmbedder.Embed: failed to embed documents: %w", err)
+		return nil, fmt.Errorf("ChromaEmbedder.GetDocumentEmbeddings: failed to embed documents: %w", err)
 	}
 	return lo.Map(result, func(e embeddings.Embedding, _ int) []float32 {
 		return e.ContentAsFloat32()

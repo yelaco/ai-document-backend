@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/types"
 	"github.com/yelaco/ai-document-backend/pkg/extractor"
 	"github.com/yelaco/ai-document-backend/pkg/util"
 	"go.uber.org/zap"
@@ -63,7 +64,7 @@ func (processor *AsynqProcessor) ProcessTaskEmbedDocument(ctx context.Context, t
 	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
 		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to unmarshal payload: %w", err)
 	}
-	document, err := processor.documentRepo.GetDocument(ctx, payload.DocumentID, payload.UserID)
+	document, err := processor.documentRepo.GetDocument(ctx, types.NewDocumentID(payload.DocumentID), types.NewUserID(payload.UserID))
 	if err != nil {
 		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to get document: %w", err)
 	}
@@ -91,7 +92,7 @@ func (processor *AsynqProcessor) ProcessTaskEmbedDocument(ctx context.Context, t
 		zap.Int("chunk_count", len(textChunks)),
 		zap.Int("original_length", len(extractedText)))
 
-	embeddings, err := processor.ragEmbedder.Embed(ctx, textChunks)
+	embeddings, err := processor.ragEmbedder.GetDocumentEmbeddings(ctx, document.SavePath)
 	if err != nil {
 		return fmt.Errorf("DocumentProcessor.ProcessTask: failed to embed document: %w", err)
 	}

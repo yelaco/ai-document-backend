@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
 	"github.com/yelaco/ai-document-backend/internal/domain/models/dtos"
 	"github.com/yelaco/ai-document-backend/internal/domain/models/entity"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/types"
 	reqContext "github.com/yelaco/ai-document-backend/internal/infrastructure/context"
 )
 
@@ -48,7 +48,7 @@ func (d *DocumentService) GetPaginatedDocuments(ctx context.Context, page int64,
 }
 
 // GetDocumentByID implements interfaces.DocumentService.
-func (d *DocumentService) GetDocumentByID(ctx context.Context, documentID uuid.UUID) (entity.Document, error) {
+func (d *DocumentService) GetDocumentByID(ctx context.Context, documentID types.DocumentID) (entity.Document, error) {
 	userID := reqContext.UserIDMustFromContext(ctx)
 	document, err := d.documentRepo.GetDocument(ctx, documentID, userID)
 	if err != nil {
@@ -58,7 +58,7 @@ func (d *DocumentService) GetDocumentByID(ctx context.Context, documentID uuid.U
 }
 
 // DeleteDocument implements interfaces.DocumentService.
-func (d *DocumentService) DeleteDocument(ctx context.Context, documentID uuid.UUID) error {
+func (d *DocumentService) DeleteDocument(ctx context.Context, documentID types.DocumentID) error {
 	userID := reqContext.UserIDMustFromContext(ctx)
 	err := d.documentRepo.DeleteDocument(ctx, documentID, userID)
 	if err != nil {

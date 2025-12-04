@@ -7,9 +7,9 @@ import (
 
 	chroma "github.com/amikos-tech/chroma-go/pkg/api/v2"
 	chromaEmbeddings "github.com/amikos-tech/chroma-go/pkg/embeddings"
-	"github.com/google/uuid"
 	"github.com/samber/lo"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/types"
 )
 
 type ChromaStore struct {
@@ -22,7 +22,7 @@ func NewChromaStore(client chroma.Client) interfaces.RagStore {
 	}
 }
 
-func (s *ChromaStore) StoreDocumentEmbeddings(ctx context.Context, documentID uuid.UUID, embeddings [][]float32) error {
+func (s *ChromaStore) StoreDocumentEmbeddings(ctx context.Context, documentID types.DocumentID, embeddings [][]float32) error {
 	collection, err := s.client.GetOrCreateCollection(ctx, "documents",
 		// We won't use this embedding function for actual embedding,
 		chroma.WithEmbeddingFunctionCreate(&chromaEmbeddings.ConsistentHashEmbeddingFunction{}),
@@ -38,7 +38,7 @@ func (s *ChromaStore) StoreDocumentEmbeddings(ctx context.Context, documentID uu
 	err = collection.Upsert(
 		ctx,
 		chroma.WithIDs(lo.Map(ebds, func(_ chromaEmbeddings.Embedding, i int) chroma.DocumentID {
-			return chroma.DocumentID(fmt.Sprintf("%s_%d_%d", documentID, time.Now().UnixNano(), i))
+			return chroma.DocumentID(fmt.Sprintf("%s_%d_%d", documentID.String(), time.Now().UnixNano(), i))
 		})...),
 		chroma.WithEmbeddings(ebds...),
 		chroma.WithMetadatas(

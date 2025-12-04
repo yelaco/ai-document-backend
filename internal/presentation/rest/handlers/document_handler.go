@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
 	domainDtos "github.com/yelaco/ai-document-backend/internal/domain/models/dtos"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/types"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/tasks"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/dtos"
 )
@@ -73,8 +74,8 @@ func (h *DocumentHandler) UploadDocument(c *gin.Context) {
 
 	// distribute embedding task to processor
 	taskPayload := tasks.PayloadEmbedDocument{
-		DocumentID: document.ID,
-		UserID:     document.UserID,
+		DocumentID: document.ID.UUID(),
+		UserID:     document.UserID.UUID(),
 	}
 	procOpt := tasks.TaskProcessingOption{
 		Queue:     tasks.QueueDefault,
@@ -135,7 +136,7 @@ func (h *DocumentHandler) GetPaginatedDocuments(c *gin.Context) {
 }
 
 func (h *DocumentHandler) GetDocumentByID(c *gin.Context) {
-	documentID, err := uuid.Parse(c.Param("id"))
+	documentID, err := types.NewDocumentIDFromString(c.Param("id"))
 	if err != nil {
 		_ = c.Error(fmt.Errorf("DocumentHandler.GetDocumentByID: invalid document ID format: %w", err))
 		c.JSON(http.StatusBadRequest, dtos.BaseErrorResponse{
@@ -168,7 +169,7 @@ func (h *DocumentHandler) GetDocumentByID(c *gin.Context) {
 }
 
 func (h *DocumentHandler) DeleteDocument(c *gin.Context) {
-	documentID, err := uuid.Parse(c.Param("id"))
+	documentID, err := types.NewDocumentIDFromString(c.Param("id"))
 	if err != nil {
 		_ = c.Error(fmt.Errorf("DocumentHandler.DeleteDocument: invalid document ID format: %w", err))
 		c.JSON(http.StatusBadRequest, dtos.BaseErrorResponse{

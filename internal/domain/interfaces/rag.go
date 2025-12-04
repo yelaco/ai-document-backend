@@ -3,17 +3,17 @@ package interfaces
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/types"
 )
 
 type RagStore interface {
-	StoreDocumentEmbeddings(ctx context.Context, documentID uuid.UUID, embeddings [][]float32) error
+	StoreDocumentEmbeddings(ctx context.Context, documentID types.DocumentID, embeddings [][]float32) error
 }
 
 type RagEmbedder interface {
-	Embed(ctx context.Context, documents []string) ([][]float32, error)
+	GetDocumentEmbeddings(ctx context.Context, documentPath string) ([][]float32, error)
 }
 
 type RagRetriever interface {
-	RetrieveDocumentContent(ctx context.Context, documentID uuid.UUID, query string, topK int) ([]string, error)
+	RetrieveDocumentContent(ctx context.Context, documentID types.DocumentID, query string, topK int) ([]string, error)
 }

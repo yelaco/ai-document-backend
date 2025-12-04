@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
 	"github.com/yelaco/ai-document-backend/internal/domain/models/dtos"
 	"github.com/yelaco/ai-document-backend/internal/domain/models/entity"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/types"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/aigateway/prompts"
 	reqContext "github.com/yelaco/ai-document-backend/internal/infrastructure/context"
 )
@@ -28,7 +28,7 @@ func NewChatService(chatRepo interfaces.ChatRepository, ragRetriever interfaces.
 }
 
 // AnswerQuestion implements interfaces.ChatService.
-func (c *ChatService) AnswerQuestion(ctx context.Context, chatID uuid.UUID, question string) (<-chan dtos.AnswerQuestionResult, error) {
+func (c *ChatService) AnswerQuestion(ctx context.Context, chatID types.ChatID, question string) (<-chan dtos.AnswerQuestionResult, error) {
 	userID := reqContext.UserIDMustFromContext(ctx)
 	chat, err := c.chatRepo.GetChat(ctx, chatID, userID)
 	if err != nil {
@@ -63,22 +63,22 @@ func (c *ChatService) CreateChat(ctx context.Context, params dtos.CreateChatPara
 }
 
 // DeleteChat implements interfaces.ChatService.
-func (c *ChatService) DeleteChat(ctx context.Context, chatID uuid.UUID) error {
+func (c *ChatService) DeleteChat(ctx context.Context, chatID types.ChatID) error {
 	panic("unimplemented")
 }
 
 // DeleteChatsByDocumentID implements interfaces.ChatService.
-func (c *ChatService) DeleteChatsByDocumentID(ctx context.Context, documentID uuid.UUID) error {
+func (c *ChatService) DeleteChatsByDocumentID(ctx context.Context, documentID types.DocumentID) error {
 	panic("unimplemented")
 }
 
 // DeleteChatsByUserID implements interfaces.ChatService.
-func (c *ChatService) DeleteChatsByUserID(ctx context.Context, userID uuid.UUID) error {
+func (c *ChatService) DeleteChatsByUserID(ctx context.Context, userID types.UserID) error {
 	panic("unimplemented")
 }
 
 // GetChatByID implements interfaces.ChatService.
-func (c *ChatService) GetChatByID(ctx context.Context, chatID uuid.UUID) (entity.Chat, error) {
+func (c *ChatService) GetChatByID(ctx context.Context, chatID types.ChatID) (entity.Chat, error) {
 	panic("unimplemented")
 }
 
@@ -88,6 +88,6 @@ func (c *ChatService) GetPaginatedChats(ctx context.Context, page int64, pageSiz
 }
 
 // UpdateChat implements interfaces.ChatService.
-func (c *ChatService) UpdateChat(ctx context.Context, chatID uuid.UUID, params dtos.UpdateChatParams) error {
+func (c *ChatService) UpdateChat(ctx context.Context, chatID types.ChatID, params dtos.UpdateChatParams) error {
 	panic("unimplemented")
 }

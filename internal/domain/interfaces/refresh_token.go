@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/types"
 )
 
 type RefreshTokenRepository interface {
-	StoreRefreshToken(ctx context.Context, userID uuid.UUID, refreshToken string, expiredsAt time.Time) error
-	GetRefreshTokenHash(ctx context.Context, userID uuid.UUID) (string, error)
-	RevokeRefreshToken(ctx context.Context, userID uuid.UUID) error
-	DeleteRefreshToken(ctx context.Context, userID uuid.UUID) error
+	StoreRefreshToken(ctx context.Context, userID types.UserID, refreshToken string, expiredsAt time.Time) error
+	GetRefreshTokenHash(ctx context.Context, userID types.UserID) (string, error)
+	RevokeRefreshToken(ctx context.Context, userID types.UserID) error
+	DeleteRefreshToken(ctx context.Context, userID types.UserID) error
 }

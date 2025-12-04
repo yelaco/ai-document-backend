@@ -3,7 +3,7 @@ package context
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/types"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/auth"
 )
 
@@ -13,38 +13,38 @@ func WithUserID(ctx context.Context, id string) context.Context {
 	return context.WithValue(ctx, UserIDKey{}, id)
 }
 
-func UserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
+func UserIDFromContext(ctx context.Context) (types.UserID, bool) {
 	id, ok := ctx.Value(UserIDKey{}).(string)
 	if !ok {
-		return uuid.Nil, false
+		return types.UserID{}, false
 	}
-	userId, err := uuid.Parse(id)
+	userId, err := types.NewUserIDFromString(id)
 	if err != nil {
-		return uuid.Nil, false
+		return types.UserID{}, false
 	}
-	return userId, ok
+	return userId, true
 }
 
-func UserIDMustFromContext(ctx context.Context) uuid.UUID {
+func UserIDMustFromContext(ctx context.Context) types.UserID {
 	id, ok := ctx.Value(UserIDKey{}).(string)
 	if !ok {
 		panic("user ID not found in context")
 	}
-	userId, err := uuid.Parse(id)
+	userId, err := types.NewUserIDFromString(id)
 	if err != nil {
 		panic("invalid user ID format in context")
 	}
 	return userId
 }
 
-func UserIDTryFromContext(ctx context.Context) uuid.UUID {
+func UserIDTryFromContext(ctx context.Context) types.UserID {
 	id, ok := ctx.Value(UserIDKey{}).(string)
 	if !ok {
-		return uuid.Nil
+		return types.UserID{}
 	}
-	userId, err := uuid.Parse(id)
+	userId, err := types.NewUserIDFromString(id)
 	if err != nil {
-		return uuid.Nil
+		return types.UserID{}
 	}
 	return userId
 }

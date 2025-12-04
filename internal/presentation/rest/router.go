@@ -40,6 +40,7 @@ func (r *Router) SetupRoutes(
 	userHandler *handlers.UserHandler,
 	authHandler *handlers.AuthHandler,
 	documentHandler *handlers.DocumentHandler,
+	sseHandler *handlers.SSEHandler,
 ) {
 	r.engine.Use(middlewares.ZapLoggerMiddleware(r.logger))
 	authMiddlware := middlewares.AuthMiddleware(tokenMaker)
@@ -75,6 +76,15 @@ func (r *Router) SetupRoutes(
 			documentRouter.GET("/", documentHandler.GetPaginatedDocuments)
 			documentRouter.GET("/:id", documentHandler.GetDocumentByID)
 			documentRouter.DELETE("/:id", documentHandler.DeleteDocument)
+		}
+		chatRouter := apiRouter.Group("/chat")
+		{
+			chatRouter.Use(authMiddlware)
+		}
+		sseRouter := apiRouter.Group("/stream")
+		{
+			sseRouter.Use(authMiddlware)
+			sseRouter.GET("/chat/:id", sseHandler.StreamChat)
 		}
 	}
 }

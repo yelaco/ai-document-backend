@@ -7,9 +7,9 @@ import (
 	chroma "github.com/amikos-tech/chroma-go/pkg/api/v2"
 	"github.com/amikos-tech/chroma-go/pkg/embeddings"
 	g "github.com/amikos-tech/chroma-go/pkg/embeddings/gemini"
-	"github.com/google/uuid"
 	"github.com/samber/lo"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/types"
 )
 
 type ChromaRetriever struct {
@@ -31,7 +31,7 @@ func NewChromaRetriever(client chroma.Client, apiKey string) interfaces.RagRetri
 	}
 }
 
-func (c *ChromaRetriever) RetrieveDocumentContent(ctx context.Context, documentID uuid.UUID, query string, topK int) ([]string, error) {
+func (c *ChromaRetriever) RetrieveDocumentContent(ctx context.Context, documentID types.DocumentID, query string, topK int) ([]string, error) {
 	collection, err := c.client.GetOrCreateCollection(ctx, "documents",
 		chroma.WithEmbeddingFunctionCreate(c.embedFunc),
 	)

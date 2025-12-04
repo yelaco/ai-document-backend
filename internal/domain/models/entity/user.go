@@ -3,12 +3,12 @@ package entity
 import (
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/types"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/auth"
 )
 
 type User struct {
-	ID           uuid.UUID
+	ID           types.UserID
 	Email        string
 	FullName     string
 	PasswordHash string
