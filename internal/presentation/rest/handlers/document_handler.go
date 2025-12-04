@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
+	domainDtos "github.com/yelaco/ai-document-backend/internal/domain/models/dtos"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/tasks"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/dtos"
 )
@@ -54,7 +55,10 @@ func (h *DocumentHandler) UploadDocument(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	document, err := h.documentService.CreateDocument(ctx, file.Filename, savePath)
+	document, err := h.documentService.CreateDocument(ctx, domainDtos.CreateDocumentParams{
+		OriginalName: file.Filename,
+		SavePath:     savePath,
+	})
 	if err != nil {
 		_ = c.Error(fmt.Errorf("DocumentHandler.UploadDocument: failed to create document: %w", err))
 		c.JSON(http.StatusInternalServerError, dtos.BaseErrorResponse{

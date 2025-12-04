@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
+	domainDtos "github.com/yelaco/ai-document-backend/internal/domain/models/dtos"
 	"github.com/yelaco/ai-document-backend/internal/presentation/rest/dtos"
 )
 
@@ -34,7 +35,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		})
 	}
 
-	user, err := h.authService.RegisterUser(c.Request.Context(), req.Email, req.FullName, req.Password)
+	user, err := h.authService.RegisterUser(c.Request.Context(), domainDtos.RegisterUserParams{
+		Email:    req.Email,
+		FullName: req.FullName,
+		Password: req.Password,
+	})
 	if err != nil {
 		_ = c.Error(fmt.Errorf("AuthHandler.Register: failed to register user: %w", err))
 		c.JSON(http.StatusInternalServerError, dtos.BaseErrorResponse{
@@ -67,7 +72,10 @@ func (h *AuthHandler) Login(c *gin.Context) {
 			},
 		})
 	}
-	auth, err := h.authService.LoginUser(c.Request.Context(), req.Email, req.Password)
+	auth, err := h.authService.LoginUser(c.Request.Context(), domainDtos.LoginUserParams{
+		Email:    req.Email,
+		Password: req.Password,
+	})
 	if err != nil {
 		_ = c.Error(fmt.Errorf("AuthHandler.Login: failed to login user: %w", err))
 		c.JSON(http.StatusUnauthorized, dtos.BaseErrorResponse{
@@ -123,7 +131,9 @@ func (h *AuthHandler) RefreshAccessToken(c *gin.Context) {
 		return
 	}
 
-	auth, err := h.authService.RefreshFlow(c.Request.Context(), refreshToken)
+	auth, err := h.authService.RefreshFlow(c.Request.Context(), domainDtos.RefreshFlowParams{
+		OldRefreshToken: refreshToken,
+	})
 	if err != nil {
 		_ = c.Error(fmt.Errorf("AuthHandler.RefreshAccessToken: failed to refresh access token: %w", err))
 		c.JSON(http.StatusUnauthorized, dtos.BaseErrorResponse{

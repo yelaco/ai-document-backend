@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/dtos"
 	"github.com/yelaco/ai-document-backend/internal/domain/models/entity"
 	reqContext "github.com/yelaco/ai-document-backend/internal/infrastructure/context"
 )
@@ -21,12 +22,12 @@ func NewDocumentService(documentRepo interfaces.DocumentRepository) interfaces.D
 }
 
 // CreateDocument implements interfaces.DocumentService.
-func (d *DocumentService) CreateDocument(ctx context.Context, originalName string, savePath string) (entity.Document, error) {
+func (d *DocumentService) CreateDocument(ctx context.Context, params dtos.CreateDocumentParams) (entity.Document, error) {
 	userID := reqContext.UserIDMustFromContext(ctx)
 	document := entity.Document{
 		UserID:       userID,
-		OriginalName: originalName,
-		SavePath:     savePath,
+		OriginalName: params.OriginalName,
+		SavePath:     params.SavePath,
 	}
 	if err := d.documentRepo.CreateDocument(ctx, &document); err != nil {
 		return entity.Document{}, fmt.Errorf("DocumentService.CreateDocument: failed to create document: %w", err)

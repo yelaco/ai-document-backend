@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/yelaco/ai-document-backend/internal/domain/interfaces"
+	"github.com/yelaco/ai-document-backend/internal/domain/models/dtos"
 	"github.com/yelaco/ai-document-backend/internal/domain/models/entity"
 	"github.com/yelaco/ai-document-backend/internal/infrastructure/auth"
 	reqContext "github.com/yelaco/ai-document-backend/internal/infrastructure/context"
@@ -35,16 +36,16 @@ func NewAuthService(
 }
 
 // LoginUser implements interfaces.AuthService.
-func (a *AuthService) LoginUser(ctx context.Context, email string, password string) (entity.Auth, error) {
-	user, err := a.userRepo.GetUserByEmail(ctx, email)
+func (a *AuthService) LoginUser(ctx context.Context, params dtos.LoginUserParams) (entity.Auth, error) {
+	user, err := a.userRepo.GetUserByEmail(ctx, params.Email)
 	if err != nil {
 		return entity.Auth{}, AuthErrorUserNotFound
 	}
-	if err := a.passwordHasher.VerifyPassword(user.PasswordHash, password); err != nil {
+	if err := a.passwordHasher.VerifyPassword(user.PasswordHash, params.Password); err != nil {
 		return entity.Auth{}, AuthErrorInvalidCredentials
 	}
 
-	accessToken, err := a.tokenMaker.CreateToken(user.ID.String(), email, string(user.Role))
+	accessToken, err := a.tokenMaker.CreateToken(user.ID.String(), params.Email, string(user.Role))
 	if err != nil {
 		return entity.Auth{}, fmt.Errorf("auth.AuthService.LoginUser: failed to create access token: %w", err)
 	}
@@ -70,15 +71,15 @@ func (a *AuthService) LoginUser(ctx context.Context, email string, password stri
 }
 
 // RegisterUser implements interfaces.AuthService.
-func (a *AuthService) RegisterUser(ctx context.Context, email string, fullName string, password string) (entity.User, error) {
-	passwordHash, err := a.passwordHasher.HashPassword(password)
+func (a *AuthService) RegisterUser(ctx context.Context, params dtos.RegisterUserParams) (entity.User, error) {
+	passwordHash, err := a.passwordHasher.HashPassword(params.Password)
 	if err != nil {
 		return entity.User{}, fmt.Errorf("AuthService.RegisterUser: failed to hash password: %w", err)
 	}
 
 	newUser := entity.User{
-		Email:        email,
-		FullName:     fullName,
+		Email:        params.Email,
+		FullName:     params.FullName,
 		PasswordHash: passwordHash,
 		Role:         auth.RoleUser,
 	}
@@ -91,7 +92,7 @@ func (a *AuthService) RegisterUser(ctx context.Context, email string, fullName s
 	return newUser, nil
 }
 
-func (a *AuthService) RefreshFlow(ctx context.Context, oldRefreshToken string) (entity.Auth, error) {
+func (a *AuthService) RefreshFlow(ctx context.Context, params dtos.RefreshFlowParams) (entity.Auth, error) {
 	userId := reqContext.UserIDMustFromContext(ctx)
 	authClaims := reqContext.AuthClaimsMustFromContext(ctx)
 
@@ -100,7 +101,7 @@ func (a *AuthService) RefreshFlow(ctx context.Context, oldRefreshToken string) (
 		return entity.Auth{}, fmt.Errorf("AuthService.RefreshFlow: failed to get refresh token hash: %w", err)
 	}
 
-	err = a.passwordHasher.VerifyPassword(refreshTokenHash, oldRefreshToken)
+	err = a.passwordHasher.VerifyPassword(refreshTokenHash, params.OldRefreshToken)
 	if err != nil {
 		return entity.Auth{}, fmt.Errorf("AuthService.RefreshFlow: invalid refresh token: %w", err)
 	}
